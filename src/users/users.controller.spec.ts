@@ -3,15 +3,17 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 
 describe('UsersController', () => {
-  let controller: UsersController;
+  let usersController: UsersController;
+  let usersService: UsersService;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleRef = await Test.createTestingModule({
       controllers: [UsersController],
       providers: [UsersService],
     }).compile();
 
-    controller = module.get<UsersController>(UsersController);
+    usersService = moduleRef.get(UsersService);
+    usersController = moduleRef.get(UsersController);
   });
 
   it('should be defined', () => {

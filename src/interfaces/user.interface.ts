@@ -1,4 +1,4 @@
-export type User = {
+export interface User {
   id: number;
   fullName: string;
   nickname: string;
@@ -7,4 +7,4 @@ export type User = {
   role: string;
   created_at: Date;
   updated_at: Date;
-};
+}
