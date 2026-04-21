@@ -5,24 +5,24 @@ export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column('text')
   fullName!: string;
 
-  @Column()
+  @Column('text')
   nickname?: string;
 
-  @Column()
+  @Column('text')
   email!: string;
 
-  @Column()
+  @Column('text')
   password_hash!: string;
 
-  @Column()
+  @Column('text')
   role!: string;
 
-  @Column()
+  @Column('date')
   created_at!: Date;
 
-  @Column()
+  @Column('date')
   updated_at!: Date;
 }
