@@ -29,6 +29,6 @@ export class UsersService {
   }
 
   async update(id: number, email: string): Promise<void> {
-    await this.usersRepository.update({id}, {email});
+    await this.usersRepository.update({ id }, { email });
   }
 }

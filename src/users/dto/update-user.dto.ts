@@ -3,27 +3,27 @@ import { CreateUserDto } from './create-user.dto';
 import { IsDate, IsEmail, IsNotEmpty, IsNumber } from 'class-validator';
 
 export class UpdateUserDto extends PartialType(CreateUserDto) {
-    @IsNumber()
-    id!: number;
+  @IsNumber()
+  id!: number;
 
-    @IsNotEmpty()
-    fullName!: string;
+  @IsNotEmpty()
+  fullName!: string;
 
-    @IsNotEmpty()
-    nickname!: string;
+  @IsNotEmpty()
+  nickname!: string;
 
-    @IsEmail()
-    email!: string;
+  @IsEmail()
+  email!: string;
 
-    @IsNotEmpty()
-    password_hash!: string;
+  @IsNotEmpty()
+  password_hash!: string;
 
-    @IsNotEmpty()
-    role!: string;
+  @IsNotEmpty()
+  role!: string;
 
-    @IsDate()
-    created_at!: string;
+  @IsDate()
+  created_at!: string;
 
-    @IsDate()
-    updated_at!: string;
+  @IsDate()
+  updated_at!: string;
 }
