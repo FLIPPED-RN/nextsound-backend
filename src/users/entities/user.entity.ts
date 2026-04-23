@@ -6,7 +6,10 @@ export class User {
   id!: number;
 
   @Column('text')
-  fullName!: string;
+  firstName!: string;
+
+  @Column('text')
+  lastName!: string;
 
   @Column('text')
   nickname?: string;
@@ -15,7 +18,7 @@ export class User {
   email!: string;
 
   @Column('text')
-  password_hash!: string;
+  password!: string;
 
   @Column('text')
   role!: string;
