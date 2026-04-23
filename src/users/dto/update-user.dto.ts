@@ -1,29 +1,21 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateUserDto } from './create-user.dto';
-import { IsDate, IsEmail, IsNotEmpty, IsNumber } from 'class-validator';
+import { IsDate, IsEmail, IsNotEmpty, IsNumber, IsString } from 'class-validator';
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {
-  @IsNumber()
-  id!: number;
+export class UpdateUserDto {
+  @IsNotEmpty({ message: 'Имя обязательно для заполнения' })
+  @IsString({ message: 'Имя должно быть строкой' })
+  firstName!: string;
 
-  @IsNotEmpty()
-  fullName!: string;
+  @IsNotEmpty({ message: 'Фамилия обязательна для заполнения' })
+  @IsString({ message: 'Фамилия должна быть строкой' })
+  lastName!: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Никнейм обязателен для заполнения' })
+  @IsString({ message: 'Никнейм должен быть строкой' })
   nickname!: string;
 
-  @IsEmail()
+  @IsString({ message: 'Email должен быть строкой' })
+  @IsNotEmpty({ message: 'Email обязателен для заполнения' })
+  @IsEmail({}, { message: 'Некорректный формат Email' })
   email!: string;
-
-  @IsNotEmpty()
-  password_hash!: string;
-
-  @IsNotEmpty()
-  role!: string;
-
-  @IsDate()
-  created_at!: string;
-
-  @IsDate()
-  updated_at!: string;
 }

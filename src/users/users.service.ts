@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { Role } from '../auth/role.enum';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(
     firstName: string,
@@ -18,7 +19,7 @@ export class UsersService {
     email: string,
     password: string,
   ) {
-    const user = this.usersRepository.create({
+    const user = await this.usersRepository.create({
       firstName,
       lastName,
       nickname,
@@ -33,19 +34,38 @@ export class UsersService {
     return savedUser;
   }
 
-  findAll(): Promise<User[]> {
-    return this.usersRepository.find();
+  async findAll(): Promise<User[]> {
+    return await this.usersRepository.find();
   }
 
-  findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOneBy({ email });
+  async findById(id: number) {
+    const user = await this.usersRepository.findOneBy({ id })
+
+    if (!user) {
+      throw new NotFoundException(
+        'Пользователь не найден в системе'
+      )
+    }
+
+    return user;
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.usersRepository.findOneBy({ email });
   }
 
   async remove(id: number): Promise<void> {
     await this.usersRepository.delete(id);
   }
 
-  async update(id: number, email: string): Promise<void> {
-    await this.usersRepository.update({ id }, { email });
+  async update(userId: number, dto: UpdateUserDto): Promise<void> {
+    const user = await this.findById(userId)
+
+    const updatedUser = await this.usersRepository.update(userId, {
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      nickname: dto.nickname,
+      email: dto.email
+    })
   }
 }

@@ -4,14 +4,15 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
+    @InjectRepository(User)
     private readonly usersService: UsersService,
-    private jwtService: JwtService,
   ) {}
 
   public async register(dto: RegisterDto) {
@@ -22,7 +23,5 @@ export class AuthService {
         'Увы, но пользователь с таким email уже существует',
       );
     }
-
-    // const newUser = await this.usersService.create
   }
 }
