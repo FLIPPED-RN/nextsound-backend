@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { Role } from '../auth/role.enum';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateUserDto } from './dto/create-user.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -12,60 +12,59 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) { }
 
-  async create(
-    firstName: string,
-    lastName: string,
-    nickname: string,
-    email: string,
-    password: string,
-  ) {
-    const user = await this.usersRepository.create({
-      firstName,
-      lastName,
-      nickname,
-      email,
-      password: password,
-      role: Role.Listener,
-      created_at: Date.now(),
-      updated_at: Date.now(),
-    });
-
-    const savedUser = await this.usersRepository.save(user);
-    return savedUser;
+  async create(user: CreateUserDto): Promise<User> {
+    return await this.usersRepository.create(user)
   }
 
-  async findAll(): Promise<User[]> {
-    return await this.usersRepository.find();
+  async findOneByEmail(email: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { email }
+    })
   }
 
-  async findById(id: number) {
-    const user = await this.usersRepository.findOneBy({ id })
+  async findOneById(id: number): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { id }
+    })
+  }
 
-    if (!user) {
-      throw new NotFoundException(
-        'Пользователь не найден в системе'
+  async profile(id: number): Promise<User> {
+    const user = await this.findOneById(id);
+    return this.userResponse(user)
+  }
+
+  async updateProfile(id: number, firstName: string, lastName: string, nickname: string): Promise<void> {
+    const user = await this.findOneById(id)
+    await this.usersRepository.update({ id }, {
+      firstName, lastName, nickname
+    })
+  }
+
+  async changePasswod(id: number, oldPassword: string, newPassword: string) {
+    const user = await this.findOneById(id)
+    const match = await this.comparePassword(oldPassword, user?.password)
+    if (!match) {
+      throw new ForbiddenException(
+        'Старый пароль, не верный'
       )
     }
 
-    return user;
+    const password = await this.hashPassword(newPassword)
+    await this.usersRepository.update({ id }, { password })
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return await this.usersRepository.findOneBy({ email });
+  userResponse(user) {
+    const { password, ...result } = user['dataValues'];
+    return result;
   }
 
-  async remove(id: number): Promise<void> {
-    await this.usersRepository.delete(id);
+  async hashPassword(password) {
+    const hash = await bcrypt.hash(password, 10)
+    return hash;
   }
 
-  async update(userId: number, dto: UpdateUserDto): Promise<void> {
-    const user = await this.findById(userId)
-
-    const updatedUser = await this.usersRepository.update(userId, {
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      nickname: dto.nickname,
-      email: dto.email
-    })
+  async comparePassword(enteredPassword, dbPassword) {
+    const match = await bcrypt.compare(enteredPassword, dbPassword)
+    return match;
   }
 }
