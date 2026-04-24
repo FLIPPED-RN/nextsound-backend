@@ -22,11 +22,22 @@ export class AuthService {
   ) { }
 
   async validateUser(email: string, pass: string) {
-    const user = await this.usersService.findByEmail(email)
-    if(!user){
+    const user = await this.usersService.findOneByEmail(email)
+    if (!user) {
       throw new NotFoundException('Пользователь не найден, проверьте введенные данные')
     }
 
-    const match = await this.usersService.
+    const match = await this.usersService.comparePassword(pass, user.password)
+    if (!match) {
+      return null // дописать логику ошибки!!!
+    }
+
+    const { password, ...result } = user['dataValues']
+    return result
+  }
+
+  async login(user) {
+    const token = await this.generagteToken(user)
+    return { user, token }
   }
 }
