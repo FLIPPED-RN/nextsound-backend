@@ -37,7 +37,29 @@ export class AuthService {
   }
 
   async login(user) {
-    const token = await this.generagteToken(user)
+    const token = await this.generaeToken(user)
     return { user, token }
+  }
+
+  async create(user) {
+    const existUser = await this.usersService.findOneByEmail(user.email)
+    if (existUser) {
+      throw new ConflictException('Паользователь с таким Email уже существует')
+    }
+
+    const pass = await this.usersService.hashPassword(user.password)
+
+    const newUser = await this.usersService.create({ ...user, password: pass })
+
+    const { password, ...result } = newUser['dataValues']
+
+    const token = await this.generaeToken(result)
+
+    return { user: result, token }
+  }
+
+  private async generaeToken(user) {
+    const token = await this.jwtService.signAsync(user)
+    return token
   }
 }
