@@ -2,17 +2,18 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { UsersService } from "../users/users.service";
 import { Strategy } from 'passport-jwt';
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(private readonly userService: UsersService) {
+    constructor(private readonly userService: UsersService, private readonly configService: ConfigService) {
         super({
-            jwtFromReques: (req) => {
+            jwtFromRequest: (req) => {
                 if (!req || !req.cookies) return null
                 return req.signedCookies['token']
             },
             ignoreExpiration: false,
-            secretOrKey: process.env.JWT_SECRET,
+            secretOrKey: configService.get<string>('JWT_SECRET'),
         })
     }
     async validate(payload: any){
@@ -21,5 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         if(!user){
             throw new UnauthorizedException('Печалька с jwt')
         }
+
+        return user;
     }
 }

@@ -5,18 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from '../users/entities/user.entity';
-import { LoginDto } from './dto/login.dto';
-import { verify } from 'argon2';
-import { Request } from 'express';
 import { JwtService } from '@nestjs/jwt';
+import { Role } from './role.enum';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
   ) { }
@@ -29,15 +23,15 @@ export class AuthService {
 
     const match = await this.usersService.comparePassword(pass, user.password)
     if (!match) {
-      return null // дописать логику ошибки!!!
+      throw new UnauthorizedException('Неверный пароль')
     }
 
-    const { password, ...result } = user['dataValues']
+    const { password, ...result } = user
     return result
   }
 
   async login(user) {
-    const token = await this.generaeToken(user)
+    const token = await this.generateToken(user)
     return { user, token }
   }
 
@@ -49,16 +43,16 @@ export class AuthService {
 
     const pass = await this.usersService.hashPassword(user.password)
 
-    const newUser = await this.usersService.create({ ...user, password: pass })
+    const newUser = await this.usersService.create({ ...user, password: pass, role: Role.Listener })
 
-    const { password, ...result } = newUser['dataValues']
+    const { password, ...result } = newUser
 
-    const token = await this.generaeToken(result)
+    const token = await this.generateToken(result)
 
     return { user: result, token }
   }
 
-  private async generaeToken(user) {
+  private async generateToken(user) {
     const token = await this.jwtService.signAsync(user)
     return token
   }

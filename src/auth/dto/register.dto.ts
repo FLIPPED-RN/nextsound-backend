@@ -15,6 +15,10 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Фамилия обязательна для заполнения' })
   lastName!: string;
 
+  @IsString({ message: 'Никнейм должен быть строкой' })
+  @IsNotEmpty({ message: 'Никнейм обязателен для заполнения' })
+  nickname!: string;
+
   @IsString({ message: 'Email должен быть строкой	' })
   @IsEmail({}, { message: 'Некорректный формат email' })
   @IsNotEmpty({ message: 'Email обязателен для заполнения' })

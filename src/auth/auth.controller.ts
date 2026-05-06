@@ -15,8 +15,7 @@ export class AuthController {
     const { user, token } = await this.authService.login(req.user)
     response.cookie('token', token, {
       maxAge: 48 * 60 * 60 * 1000,
-      httoOnly: true,
-      signed: true
+      httpOnly: true,
     })
 
     return { messgages: 'Успешный вход', result: { user } }

@@ -13,7 +13,8 @@ export class UsersService {
   ) { }
 
   async create(user: CreateUserDto): Promise<User> {
-    return await this.usersRepository.create(user)
+    const newUser = this.usersRepository.create(user)
+    return await this.usersRepository.save(newUser)
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
@@ -54,7 +55,7 @@ export class UsersService {
   }
 
   userResponse(user) {
-    const { password, ...result } = user['dataValues'];
+    const { password, ...result } = user;
     return result;
   }
 
