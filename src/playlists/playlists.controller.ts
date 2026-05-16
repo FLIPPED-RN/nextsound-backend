@@ -1,0 +1,48 @@
+import { Controller, Get, Post, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { PlaylistsService } from './playlists.service';
+
+@Controller('playlists')
+export class PlaylistsController {
+  constructor(private readonly playlistsService: PlaylistsService) { }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post()
+  async create(@Request() req, @Body('name') name: string) {
+    return this.playlistsService.create(req.user.id, name);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get()
+  async getMyPlaylists(@Request() req) {
+    return this.playlistsService.findAllByUser(req.user.id);
+  }
+
+  @Get(':id')
+  async getOne(@Param('id') id: number) {
+    return this.playlistsService.findOne(id);
+  }
+
+  @Get(':id/tracks')
+  async getTracks(@Param('id') id: number) {
+    return this.playlistsService.getTracks(id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/tracks')
+  async addTrack(@Param('id') playlistId: number, @Request() req, @Body('trackId') trackId: number) {
+    return this.playlistsService.addTrack(playlistId, req.user.id, trackId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/tracks/:trackId')
+  async removeTrack(@Param('id') playlistId: number, @Param('trackId') trackId: number, @Request() req) {
+    return this.playlistsService.removeTrack(playlistId, req.user.id, trackId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async remove(@Param('id') id: number, @Request() req) {
+    return this.playlistsService.remove(id, req.user.id);
+  }
+}

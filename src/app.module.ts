@@ -1,18 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { User } from './users/entities/user.entity';
 import { UsersModule } from './users/users.module';
 import { TracksModule } from './tracks/tracks.module';
+import { LikesModule } from './likes/likes.module';
+import { PlaylistsModule } from './playlists/playlists.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'mysql',
       host: process.env.DB_HOST,
@@ -20,14 +17,14 @@ import { TracksModule } from './tracks/tracks.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User],
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
     AuthModule,
     UsersModule,
     TracksModule,
+    LikesModule,
+    PlaylistsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule { }

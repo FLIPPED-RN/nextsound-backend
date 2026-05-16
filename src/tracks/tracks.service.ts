@@ -1,26 +1,67 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Track, TrackVisibility } from './entities/track.entity';
 import { CreateTrackDto } from './dto/create-track.dto';
-import { UpdateTrackDto } from './dto/update-track.dto';
 
 @Injectable()
 export class TracksService {
-  create(createTrackDto: CreateTrackDto) {
-    return 'This action adds a new track';
+  constructor(
+    @InjectRepository(Track)
+    private tracksRepository: Repository<Track>,
+  ) { }
+
+  async create(createTrackDto: CreateTrackDto, userId: number): Promise<Track> {
+    const track = this.tracksRepository.create({ ...createTrackDto, userId });
+    return this.tracksRepository.save(track);
   }
 
-  findAll() {
-    return `This action returns all tracks`;
+  async findAll(): Promise<Track[]> {
+    return this.tracksRepository.find({
+      where: { visibility: TrackVisibility.PUBLIC },
+      relations: ['user'],
+      order: { created_at: 'DESC' },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} track`;
+  async findOne(id: number): Promise<Track> {
+    const track = await this.tracksRepository.findOne({ where: { id }, relations: ['user'] });
+    if (!track) throw new NotFoundException('Трек не найден');
+    return track;
   }
 
-  update(id: number, updateTrackDto: UpdateTrackDto) {
-    return `This action updates a #${id} track`;
+  async findByUser(userId: number): Promise<Track[]> {
+    return this.tracksRepository.find({
+      where: { userId },
+      order: { created_at: 'DESC' },
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} track`;
+  async update(id: number, userId: number, updateData: Partial<Track>): Promise<Track> {
+    const track = await this.findOne(id);
+    if (track.userId !== userId) throw new ForbiddenException('Вы не можете редактировать чужой трек');
+    await this.tracksRepository.update(id, updateData);
+    return this.findOne(id);
+  }
+
+  async remove(id: number, userId: number): Promise<void> {
+    const track = await this.findOne(id);
+    if (track.userId !== userId) throw new ForbiddenException('Вы не можете удалить чужой трек');
+    await this.tracksRepository.delete(id);
+  }
+
+  async incrementPlays(id: number): Promise<void> {
+    await this.tracksRepository.increment({ id }, 'plays_count', 1);
+  }
+
+  async search(query: string): Promise<Track[]> {
+    return this.tracksRepository
+      .createQueryBuilder('track')
+      .leftJoinAndSelect('track.user', 'user')
+      .where('track.title LIKE :query', { query: `%${query}%` })
+      .orWhere('user.nickname LIKE :query', { query: `%${query}%` })
+      .andWhere('track.visibility = :visibility', { visibility: TrackVisibility.PUBLIC })
+      .orderBy('track.created_at', 'DESC')
+      .getMany();
   }
 }

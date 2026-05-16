@@ -68,4 +68,11 @@ export class UsersService {
     const match = await bcrypt.compare(enteredPassword, dbPassword)
     return match;
   }
+
+  async getPublicProfile(id: number) {
+    const user = await this.findOneById(id);
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    const { password, ...result } = user;
+    return result;
+  }
 }
