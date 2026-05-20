@@ -10,7 +10,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         super({
             jwtFromRequest: (req) => {
                 if (!req || !req.cookies) return null
-                return req.signedCookies['token']
+                return req.cookies['token']
             },
             ignoreExpiration: false,
             secretOrKey: configService.get<string>('JWT_SECRET'),
@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         const user = await this.userService.findOneById(payload.id)
 
         if(!user){
-            throw new UnauthorizedException('Печалька с jwt')
+            throw new UnauthorizedException('Пользователь не найден')
         }
 
         return user;
