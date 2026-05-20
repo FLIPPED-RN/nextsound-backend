@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { TracksModule } from './tracks/tracks.module';
 import { LikesModule } from './likes/likes.module';
 import { PlaylistsModule } from './playlists/playlists.module';
+import { CommentsModule } from './comments/comments.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { PlaylistsModule } from './playlists/playlists.module';
     TracksModule,
     LikesModule,
     PlaylistsModule,
+    CommentsModule,
   ],
 })
-export class AppModule { }
+export class AppModule {}
