@@ -6,7 +6,7 @@ import { LikesService } from './likes.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Like])],
-  controllers: [LikesController],
   providers: [LikesService],
+  exports: [LikesService],
 })
-export class LikesModule { }
+export class LikesModule {}

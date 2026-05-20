@@ -1,21 +1,34 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Request, UseGuards, Query } from '@nestjs/common';
+// src/tracks/tracks.controller.ts
+import {
+  Controller, Get, Post, Patch, Delete, Param, Body, Request,
+  UseGuards, Query, UseInterceptors, UploadedFiles,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { TracksService } from './tracks.service';
-import { CreateTrackDto } from './dto/create-track.dto';
+import { LikesService } from '../likes/likes.service';
 
 @Controller('tracks')
 export class TracksController {
-  constructor(private readonly tracksService: TracksService) { }
+  constructor(
+    private readonly tracksService: TracksService,
+    private readonly likesService: LikesService,
+  ) {}
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  async create(@Request() req, @Body() createTrackDto: CreateTrackDto) {
-    return this.tracksService.create(createTrackDto, req.user.id);
-  }
-
-  @Get()
-  async findAll() {
-    return this.tracksService.findAll();
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'file', maxCount: 1 },
+    { name: 'cover', maxCount: 1 },
+  ]))
+  async create(
+    @Request() req,
+    @UploadedFiles() files: { file?: Express.Multer.File[]; cover?: Express.Multer.File[] },
+    @Body() body: any,
+  ) {
+    const file = files?.file?.[0];
+    const cover = files?.cover?.[0];
+    return this.tracksService.create(body, file, cover, req.user.id);
   }
 
   @Get('search')
@@ -23,10 +36,21 @@ export class TracksController {
     return this.tracksService.search(query);
   }
 
-  @Get('my')
   @UseGuards(AuthGuard('jwt'))
+  @Get('my')
   async getMyTracks(@Request() req) {
     return this.tracksService.findByUser(req.user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('liked')
+  async getLikedTracks(@Request() req) {
+    return this.likesService.getUserLikedTracks(req.user.id);
+  }
+
+  @Get()
+  async findAll() {
+    return this.tracksService.findAll();
   }
 
   @Get(':id')
@@ -35,8 +59,26 @@ export class TracksController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Post(':id/like')
+  async toggleLike(@Param('id') trackId: number, @Request() req) {
+    return this.likesService.toggleLike(req.user.id, trackId);
+  }
+
+  @Get(':id/likes')
+  async getLikesCount(@Param('id') trackId: number) {
+    const count = await this.likesService.getLikesCount(trackId);
+    return { count };
+  }
+
+  @Post(':id/play')
+  async incrementPlay(@Param('id') id: number) {
+    await this.tracksService.incrementPlays(id);
+    return { message: 'ok' };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
-  async update(@Param('id') id: number, @Request() req, @Body() updateData: Partial<CreateTrackDto>) {
+  async update(@Param('id') id: number, @Request() req, @Body() updateData: any) {
     return this.tracksService.update(id, req.user.id, updateData);
   }
 
@@ -44,11 +86,5 @@ export class TracksController {
   @Delete(':id')
   async remove(@Param('id') id: number, @Request() req) {
     return this.tracksService.remove(id, req.user.id);
-  }
-
-  @Post(':id/play')
-  async incrementPlay(@Param('id') id: number) {
-    await this.tracksService.incrementPlays(id);
-    return { message: 'Прослушивание засчитано' };
   }
 }

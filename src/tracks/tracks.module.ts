@@ -1,13 +1,29 @@
 import { Module } from '@nestjs/common';
+import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { Track } from './entities/track.entity';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
+import { LikesModule } from '../likes/likes.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Track])],
+  imports: [
+    TypeOrmModule.forFeature([Track]),
+    MulterModule.register({
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+    }),
+    LikesModule
+  ],
   controllers: [TracksController],
   providers: [TracksService],
   exports: [TracksService],
 })
-export class TracksModule { }
+export class TracksModule {}

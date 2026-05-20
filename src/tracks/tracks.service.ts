@@ -11,10 +11,17 @@ export class TracksService {
     private tracksRepository: Repository<Track>,
   ) { }
 
-  async create(createTrackDto: CreateTrackDto, userId: number): Promise<Track> {
-    const track = this.tracksRepository.create({ ...createTrackDto, userId });
+  async create(body: any, file?: Express.Multer.File, cover?: Express.Multer.File, userId?: number): Promise<Track> {
+    const track = new Track();
+    track.title = body.title;
+    track.description = body.description || '';
+    track.genre = body.genre || '';
+    track.bpm = body.bpm ? Number(body.bpm) : 0;
+    track.file_path = file ? file.path.replace(/\\/g, '/') : '';
+    track.cover_path = cover ? cover.path.replace(/\\/g, '/') : '';
+    track.userId = userId!;
     return this.tracksRepository.save(track);
-  }
+}
 
   async findAll(): Promise<Track[]> {
     return this.tracksRepository.find({

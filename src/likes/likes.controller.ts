@@ -2,7 +2,7 @@ import { Controller, Post, Delete, Get, Param, Request, UseGuards } from '@nestj
 import { AuthGuard } from '@nestjs/passport';
 import { LikesService } from './likes.service';
 
-@Controller('tracks')
+@Controller('likes')
 export class LikesController {
   constructor(private readonly likesService: LikesService) { }
 
