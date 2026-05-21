@@ -10,8 +10,9 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: frontendUrl,
     credentials: true,
   });
 
@@ -29,6 +30,10 @@ async function bootstrap() {
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
 
-  await app.listen(process.env.PORT ?? 3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  
+  console.log(`🚀 Server is running on port ${port}`);
+  console.log(`📝 Swagger docs available at /api`);
 }
 bootstrap();
