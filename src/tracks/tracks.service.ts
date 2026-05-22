@@ -21,7 +21,7 @@ export class TracksService {
     track.cover_path = cover ? cover.path.replace(/\\/g, '/') : '';
     track.userId = userId!;
     return this.tracksRepository.save(track);
-}
+  }
 
   async findAll(): Promise<Track[]> {
     return this.tracksRepository.find({
@@ -54,7 +54,13 @@ export class TracksService {
   async remove(id: number, userId: number): Promise<void> {
     const track = await this.findOne(id);
     if (track.userId !== userId) throw new ForbiddenException('Вы не можете удалить чужой трек');
-    await this.tracksRepository.delete(id);
+
+    await this.tracksRepository.manager.transaction(async (manager) => {
+      await manager.delete('comment', { trackId: id });
+      await manager.delete('like', { trackId: id });
+      await manager.delete('playlist_track', { trackId: id });
+      await manager.delete('track', { id });
+    });
   }
 
   async incrementPlays(id: number): Promise<void> {

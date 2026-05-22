@@ -13,7 +13,7 @@ export class TracksController {
   constructor(
     private readonly tracksService: TracksService,
     private readonly likesService: LikesService,
-  ) {}
+  ) { }
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
@@ -86,5 +86,10 @@ export class TracksController {
   @Delete(':id')
   async remove(@Param('id') id: number, @Request() req) {
     return this.tracksService.remove(id, req.user.id);
+  }
+
+  @Get('user/:userId')
+  async findByUser(@Param('userId') userId: number) {
+    return this.tracksService.findByUser(userId);
   }
 }

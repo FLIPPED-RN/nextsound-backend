@@ -13,7 +13,13 @@ import { LikesModule } from '../likes/likes.module';
     TypeOrmModule.forFeature([Track]),
     MulterModule.register({
       storage: diskStorage({
-        destination: './uploads',
+        destination: (req, file, cb) => {
+          if (file.fieldname === 'cover') {
+            cb(null, './uploads/covers');
+          } else {
+            cb(null, './uploads/audio');
+          }
+        },
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, uniqueSuffix + extname(file.originalname));
@@ -26,4 +32,4 @@ import { LikesModule } from '../likes/likes.module';
   providers: [TracksService],
   exports: [TracksService],
 })
-export class TracksModule {}
+export class TracksModule { }
