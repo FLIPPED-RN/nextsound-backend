@@ -6,3 +6,4 @@
 [circleci-url]: https://circleci.com/gh/nestjs/nest
 
 # NEXT_SOUND_BACKEND (NEST JS)
+1. Создать папку uploads и в ней еще 2 папки audio и covers

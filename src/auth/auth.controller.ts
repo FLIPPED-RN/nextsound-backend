@@ -16,7 +16,9 @@ export class AuthController {
     response.cookie('token', token, {
       maxAge: 48 * 60 * 60 * 1000,
       httpOnly: true,
-    })
+      secure: false,
+      sameSite: 'lax',
+    });
 
     return { messgages: 'Успешный вход', result: { user } }
   }
