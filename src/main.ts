@@ -11,9 +11,18 @@ async function bootstrap() {
   app.use(cookieParser());
 
   app.enableCors({
-  origin: ['http://localhost:5173', 'http://172.20.10.5:5173'],
-  credentials: true,
-});
+    origin: (origin, cb) => {
+      // No origin (curl, same-origin, native apps) is always allowed.
+      // Allow localhost / LAN dev ports plus the configured production frontend.
+      const allowed =
+        !origin ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+        /^http:\/\/(172\.20\.10\.5|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin) ||
+        origin === process.env.FRONTEND_URL?.replace(/\/$/, '');
+      cb(null, allowed);
+    },
+    credentials: true,
+  });
 
 
   app.useStaticAssets(join(__dirname, '..', 'uploads'), {
