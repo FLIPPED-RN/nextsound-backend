@@ -21,6 +21,12 @@ export class User {
   @Column('text')
   password!: string;
 
+  @Column({ type: 'text', nullable: true })
+  avatar?: string;
+
+  @Column({ type: 'text', nullable: true })
+  bio?: string;
+
   @Column({ type: 'enum', enum: Role, default: Role.Listener })
   role!: Role;
 

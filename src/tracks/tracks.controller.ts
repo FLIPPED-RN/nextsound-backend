@@ -1,4 +1,3 @@
-// src/tracks/tracks.controller.ts
 import {
   Controller, Get, Post, Patch, Delete, Param, Body, Request,
   UseGuards, Query, UseInterceptors, UploadedFiles,
@@ -7,6 +6,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { TracksService } from './tracks.service';
 import { LikesService } from '../likes/likes.service';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 
 @Controller('tracks')
 export class TracksController {
@@ -70,10 +70,10 @@ export class TracksController {
     return { count };
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Post(':id/play')
-  async incrementPlay(@Param('id') id: number) {
-    await this.tracksService.incrementPlays(id);
-    return { message: 'ok' };
+  async incrementPlay(@Param('id') id: number, @Request() req) {
+    return this.tracksService.recordPlay(id, req.user?.id);
   }
 
   @UseGuards(AuthGuard('jwt'))

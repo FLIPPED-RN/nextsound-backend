@@ -12,8 +12,6 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, cb) => {
-      // No origin (curl, same-origin, native apps) is always allowed.
-      // Allow localhost / LAN dev ports plus the configured production frontend.
       const allowed =
         !origin ||
         /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||

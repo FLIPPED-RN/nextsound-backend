@@ -4,13 +4,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Track } from './entities/track.entity';
+import { Play } from './entities/play.entity';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
 import { LikesModule } from '../likes/likes.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Track]),
+    TypeOrmModule.forFeature([Track, Play]),
     MulterModule.register({
       storage: diskStorage({
         destination: (req, file, cb) => {

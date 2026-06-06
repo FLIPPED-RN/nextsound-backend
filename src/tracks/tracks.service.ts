@@ -2,13 +2,15 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Track, TrackVisibility } from './entities/track.entity';
-import { CreateTrackDto } from './dto/create-track.dto';
+import { Play } from './entities/play.entity';
 
 @Injectable()
 export class TracksService {
   constructor(
     @InjectRepository(Track)
     private tracksRepository: Repository<Track>,
+    @InjectRepository(Play)
+    private playsRepository: Repository<Play>,
   ) { }
 
   async create(body: any, file?: Express.Multer.File, cover?: Express.Multer.File, userId?: number): Promise<Track> {
@@ -40,6 +42,7 @@ export class TracksService {
   async findByUser(userId: number): Promise<Track[]> {
     return this.tracksRepository.find({
       where: { userId },
+      relations: ['user'],
       order: { created_at: 'DESC' },
     });
   }
@@ -58,23 +61,49 @@ export class TracksService {
     await this.tracksRepository.manager.transaction(async (manager) => {
       await manager.delete('comment', { trackId: id });
       await manager.delete('like', { trackId: id });
+      await manager.delete('play', { trackId: id });
       await manager.delete('playlist_track', { trackId: id });
       await manager.delete('track', { id });
     });
   }
 
-  async incrementPlays(id: number): Promise<void> {
-    await this.tracksRepository.increment({ id }, 'plays_count', 1);
+  async recordPlay(trackId: number, userId?: number): Promise<{ counted: boolean; plays: number }> {
+    const track = await this.findOne(trackId);
+
+    if (!userId) {
+      return { counted: false, plays: track.plays_count };
+    }
+
+    const existing = await this.playsRepository.findOne({ where: { userId, trackId } });
+    if (existing) {
+      return { counted: false, plays: track.plays_count };
+    }
+
+    try {
+      await this.playsRepository.save(this.playsRepository.create({ userId, trackId }));
+      await this.tracksRepository.increment({ id: trackId }, 'plays_count', 1);
+      return { counted: true, plays: track.plays_count + 1 };
+    } catch {
+      return { counted: false, plays: track.plays_count };
+    }
   }
 
   async search(query: string): Promise<Track[]> {
+    const term = (query || '').trim();
+
+    if (!term) {
+      return this.findAll();
+    }
+
     return this.tracksRepository
       .createQueryBuilder('track')
       .leftJoinAndSelect('track.user', 'user')
-      .where('track.title LIKE :query', { query: `%${query}%` })
-      .orWhere('user.nickname LIKE :query', { query: `%${query}%` })
-      .andWhere('track.visibility = :visibility', { visibility: TrackVisibility.PUBLIC })
-      .orderBy('track.created_at', 'DESC')
+      .where('track.visibility = :visibility', { visibility: TrackVisibility.PUBLIC })
+      .andWhere(
+        '(LOWER(track.title) LIKE :q OR LOWER(track.genre) LIKE :q OR LOWER(user.nickname) LIKE :q OR LOWER(user.firstName) LIKE :q OR LOWER(user.lastName) LIKE :q)',
+        { q: `%${term.toLowerCase()}%` },
+      )
+      .orderBy('track.plays_count', 'DESC')
       .getMany();
   }
 }
