@@ -3,6 +3,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { mkdirSync } from 'fs';
 import { Track } from './entities/track.entity';
 import { Play } from './entities/play.entity';
 import { TracksController } from './tracks.controller';
@@ -15,11 +16,9 @@ import { LikesModule } from '../likes/likes.module';
     MulterModule.register({
       storage: diskStorage({
         destination: (req, file, cb) => {
-          if (file.fieldname === 'cover') {
-            cb(null, './uploads/covers');
-          } else {
-            cb(null, './uploads/audio');
-          }
+          const dir = file.fieldname === 'cover' ? './uploads/covers' : './uploads/audio';
+          mkdirSync(dir, { recursive: true });
+          cb(null, dir);
         },
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
