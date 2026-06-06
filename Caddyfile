@@ -1,0 +1,19 @@
+{
+	email rnazarov142@gmail.com
+}
+
+24nextsound.ru, www.24nextsound.ru {
+	encode gzip zstd
+	root * /var/www/nextsound
+
+	@api path /api/*
+	handle @api {
+		uri strip_prefix /api
+		reverse_proxy 127.0.0.1:3000
+	}
+
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}
