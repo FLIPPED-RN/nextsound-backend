@@ -27,6 +27,15 @@ export class User {
   @Column({ type: 'text', nullable: true })
   bio?: string;
 
+  @Column({ default: false })
+  isVerified!: boolean;
+
+  @Column({ type: 'varchar', length: 6, nullable: true })
+  verifyCode?: string | null;
+
+  @Column({ type: 'bigint', nullable: true })
+  verifyExpires?: number | null;
+
   @Column({ type: 'enum', enum: Role, default: Role.Listener })
   role!: Role;
 

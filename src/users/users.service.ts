@@ -45,6 +45,14 @@ export class UsersService {
     return this.getPublicProfile(id);
   }
 
+  async setVerifyCode(id: number, code: string, expires: number) {
+    await this.usersRepository.update({ id }, { verifyCode: code, verifyExpires: expires });
+  }
+
+  async markVerified(id: number) {
+    await this.usersRepository.update({ id }, { isVerified: true, verifyCode: null, verifyExpires: null });
+  }
+
   async changePasswod(id: number, oldPassword: string, newPassword: string) {
     const user = await this.findOneById(id);
     const match = await this.comparePassword(oldPassword, user?.password);
