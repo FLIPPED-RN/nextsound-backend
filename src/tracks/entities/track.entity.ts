@@ -45,6 +45,9 @@ export class Track {
   @Column({ default: 0 })
   plays_count!: number;
 
+  @Column({ type: 'bigint', default: 0 })
+  size!: number;
+
   @CreateDateColumn()
   created_at!: Date;
 

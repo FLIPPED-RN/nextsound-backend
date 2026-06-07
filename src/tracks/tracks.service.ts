@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { existsSync, unlinkSync } from 'fs';
 import { Track, TrackVisibility } from './entities/track.entity';
 import { Play } from './entities/play.entity';
 
@@ -21,8 +22,29 @@ export class TracksService {
     track.bpm = body.bpm ? Number(body.bpm) : 0;
     track.file_path = file ? file.path.replace(/\\/g, '/') : '';
     track.cover_path = cover ? cover.path.replace(/\\/g, '/') : '';
+    track.size = file?.size || 0;
+    if (body.visibility) track.visibility = body.visibility;
     track.userId = userId!;
     return this.tracksRepository.save(track);
+  }
+
+  private deleteFiles(track: Track) {
+    for (const p of [track.file_path, track.cover_path]) {
+      if (!p) continue;
+      try {
+        if (existsSync(p)) unlinkSync(p);
+      } catch { }
+    }
+  }
+
+  private async cascadeDelete(id: number) {
+    await this.tracksRepository.manager.transaction(async (manager) => {
+      await manager.delete('comment', { trackId: id });
+      await manager.delete('like', { trackId: id });
+      await manager.delete('play', { trackId: id });
+      await manager.delete('playlist_track', { trackId: id });
+      await manager.delete('track', { id });
+    });
   }
 
   async findAll(): Promise<Track[]> {
@@ -57,14 +79,14 @@ export class TracksService {
   async remove(id: number, userId: number): Promise<void> {
     const track = await this.findOne(id);
     if (track.userId !== userId) throw new ForbiddenException('Вы не можете удалить чужой трек');
+    this.deleteFiles(track);
+    await this.cascadeDelete(id);
+  }
 
-    await this.tracksRepository.manager.transaction(async (manager) => {
-      await manager.delete('comment', { trackId: id });
-      await manager.delete('like', { trackId: id });
-      await manager.delete('play', { trackId: id });
-      await manager.delete('playlist_track', { trackId: id });
-      await manager.delete('track', { id });
-    });
+  async removeAsAdmin(id: number): Promise<void> {
+    const track = await this.findOne(id);
+    this.deleteFiles(track);
+    await this.cascadeDelete(id);
   }
 
   async recordPlay(trackId: number, userId?: number): Promise<{ counted: boolean; plays: number }> {
