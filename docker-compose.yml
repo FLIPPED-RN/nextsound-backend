@@ -35,6 +35,12 @@ services:
       PORT: ${PORT}
       FRONTEND_URL: ${FRONTEND_URL}
       NODE_ENV: production
+      # Mail (SMTP)
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USER: ${MAIL_USER}
+      MAIL_PASS: ${MAIL_PASS}
+      MAIL_FROM: ${MAIL_FROM}
     volumes:
       - uploads_data:/app/uploads
     depends_on:
