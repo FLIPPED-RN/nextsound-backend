@@ -30,6 +30,9 @@ export class User {
   @Column({ default: false })
   isVerified!: boolean;
 
+  @Column({ default: false })
+  isArtistVerified!: boolean;
+
   @Column({ type: 'varchar', length: 6, nullable: true })
   verifyCode?: string | null;
 

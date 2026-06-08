@@ -147,6 +147,13 @@ export class AdminService {
     return this.clean((await this.users.findOne({ where: { id } }))!);
   }
 
+  async setArtistVerified(id: number, verified: boolean) {
+    const user = await this.users.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    await this.users.update({ id }, { isArtistVerified: !!verified });
+    return this.clean((await this.users.findOne({ where: { id } }))!);
+  }
+
   async deleteUser(id: number) {
     const user = await this.users.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Пользователь не найден');

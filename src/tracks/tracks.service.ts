@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { existsSync, unlinkSync } from 'fs';
 import { Track, TrackVisibility } from './entities/track.entity';
 import { Play } from './entities/play.entity';
+import { User } from '../users/entities/user.entity';
+import { Role } from '../auth/role.enum';
 
 @Injectable()
 export class TracksService {
@@ -12,6 +14,8 @@ export class TracksService {
     private tracksRepository: Repository<Track>,
     @InjectRepository(Play)
     private playsRepository: Repository<Play>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) { }
 
   async create(body: any, file?: Express.Multer.File, cover?: Express.Multer.File, userId?: number): Promise<Track> {
@@ -25,7 +29,13 @@ export class TracksService {
     track.size = file?.size || 0;
     if (body.visibility) track.visibility = body.visibility;
     track.userId = userId!;
-    return this.tracksRepository.save(track);
+    const saved = await this.tracksRepository.save(track);
+
+    if (userId) {
+      await this.usersRepository.update({ id: userId, role: Role.Listener }, { role: Role.Artist });
+    }
+
+    return saved;
   }
 
   private deleteFiles(track: Track) {

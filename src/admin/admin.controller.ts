@@ -33,6 +33,11 @@ export class AdminController {
     return this.adminService.setRole(id, role);
   }
 
+  @Patch('users/:id/artist-verified')
+  setArtistVerified(@Param('id') id: number, @Body('verified') verified: boolean) {
+    return this.adminService.setArtistVerified(id, verified);
+  }
+
   @Delete('users/:id')
   deleteUser(@Param('id') id: number) {
     return this.adminService.deleteUser(id);
