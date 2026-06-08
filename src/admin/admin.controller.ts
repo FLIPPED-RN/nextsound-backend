@@ -23,6 +23,11 @@ export class AdminController {
     return this.adminService.deleteTrack(id);
   }
 
+  @Patch('tracks/:id/featured')
+  setFeatured(@Param('id') id: number, @Body('featured') featured: boolean) {
+    return this.adminService.setFeatured(id, featured);
+  }
+
   @Get('users')
   users() {
     return this.adminService.listUsers();

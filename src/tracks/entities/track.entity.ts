@@ -48,6 +48,9 @@ export class Track {
   @Column({ type: 'bigint', default: 0 })
   size!: number;
 
+  @Column({ default: false })
+  isFeatured!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 

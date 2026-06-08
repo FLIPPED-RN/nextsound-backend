@@ -127,6 +127,18 @@ export class AdminService {
     return { message: 'Трек удалён' };
   }
 
+  async setFeatured(id: number, featured: boolean) {
+    const track = await this.tracks.findOne({ where: { id } });
+    if (!track) throw new NotFoundException('Трек не найден');
+    if (featured) {
+      await this.tracks.createQueryBuilder().update().set({ isFeatured: false }).execute();
+      await this.tracks.update({ id }, { isFeatured: true });
+    } else {
+      await this.tracks.update({ id }, { isFeatured: false });
+    }
+    return { ok: true, featured };
+  }
+
   async listUsers() {
     const users = await this.users.find({ order: { created_at: 'DESC' } });
     const result: any[] = [];
