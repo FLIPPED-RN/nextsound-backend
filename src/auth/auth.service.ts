@@ -44,6 +44,10 @@ export class AuthService {
     return { user, token }
   }
 
+  private mailEnabled() {
+    return process.env.MAIL_ENABLED === 'true';
+  }
+
   async create(user) {
     const existUser = await this.usersService.findOneByEmail(user.email)
     if (existUser) {
@@ -52,6 +56,11 @@ export class AuthService {
 
     const pass = await this.usersService.hashPassword(user.password)
     const newUser = await this.usersService.create({ ...user, password: pass, role: Role.Listener })
+
+    if (!this.mailEnabled()) {
+      await this.usersService.markVerified(newUser.id)
+      return { needVerification: false, email: newUser.email }
+    }
 
     const code = this.genCode()
     await this.usersService.setVerifyCode(newUser.id, code, Date.now() + CODE_TTL)

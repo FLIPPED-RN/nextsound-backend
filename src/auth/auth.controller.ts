@@ -20,7 +20,7 @@ export class AuthController {
   @HttpCode(200)
   @Post('login')
   async login(@Request() req, @Res({ passthrough: true }) response) {
-    if (!req.user.isVerified) {
+    if (process.env.MAIL_ENABLED === 'true' && !req.user.isVerified) {
       throw new ForbiddenException({ message: 'Подтвердите почту', needVerification: true, email: req.user.email });
     }
     const { user, token } = await this.authService.login(req.user)
