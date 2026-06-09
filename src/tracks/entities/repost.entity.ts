@@ -1,20 +1,12 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Track } from '../../tracks/entities/track.entity';
+import { Track } from './track.entity';
 
 @Entity()
-export class Comment {
+@Unique(['userId', 'trackId'])
+export class Repost {
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @Column('text')
-  text!: string;
 
   @ManyToOne(() => User)
   user!: User;
@@ -27,9 +19,6 @@ export class Comment {
 
   @Column()
   trackId!: number;
-
-  @Column({ type: 'int', nullable: true })
-  parentId?: number | null;
 
   @CreateDateColumn()
   created_at!: Date;

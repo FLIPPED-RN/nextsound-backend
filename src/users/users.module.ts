@@ -3,21 +3,20 @@ import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { mkdirSync } from 'fs';
 import { UsersService } from './users.service';
+import { FollowService } from './follow.service';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
+import { Follow } from './entities/follow.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Follow]),
+    NotificationsModule,
     MulterModule.register({
       storage: diskStorage({
-        destination: (req, file, cb) => {
-          const dir = './uploads/avatars';
-          mkdirSync(dir, { recursive: true });
-          cb(null, dir);
-        },
+        destination: './uploads/avatars',
         filename: (req, file, cb) => {
           const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
           cb(null, uniqueSuffix + extname(file.originalname));
@@ -26,6 +25,6 @@ import { User } from './entities/user.entity';
     }),
   ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, FollowService],
 })
 export class UsersModule { }

@@ -1,13 +1,18 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Like } from './entities/like.entity';
+import { Track } from '../tracks/entities/track.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class LikesService {
   constructor(
     @InjectRepository(Like)
     private likesRepository: Repository<Like>,
+    @InjectRepository(Track)
+    private tracksRepository: Repository<Track>,
+    private notifications: NotificationsService,
   ) { }
 
   async toggleLike(userId: number, trackId: number): Promise<{ liked: boolean }> {
@@ -18,6 +23,10 @@ export class LikesService {
     }
     const like = this.likesRepository.create({ userId, trackId });
     await this.likesRepository.save(like);
+    const track = await this.tracksRepository.findOne({ where: { id: trackId } });
+    if (track) {
+      await this.notifications.notify(track.userId, 'track_like', { actorId: userId, trackId });
+    }
     return { liked: true };
   }
 

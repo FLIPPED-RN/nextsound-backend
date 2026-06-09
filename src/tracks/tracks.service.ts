@@ -4,8 +4,10 @@ import { Repository } from 'typeorm';
 import { existsSync, unlinkSync } from 'fs';
 import { Track, TrackVisibility } from './entities/track.entity';
 import { Play } from './entities/play.entity';
+import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../auth/role.enum';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TracksService {
@@ -16,7 +18,38 @@ export class TracksService {
     private playsRepository: Repository<Play>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Repost)
+    private repostsRepository: Repository<Repost>,
+    private notifications: NotificationsService,
   ) { }
+
+  async toggleRepost(userId: number, trackId: number) {
+    const track = await this.findOne(trackId);
+    const existing = await this.repostsRepository.findOne({ where: { userId, trackId } });
+    if (existing) {
+      await this.repostsRepository.remove(existing);
+      return { reposted: false };
+    }
+    await this.repostsRepository.save(this.repostsRepository.create({ userId, trackId }));
+    await this.notifications.notify(track.userId, 'repost', { actorId: userId, trackId });
+    return { reposted: true };
+  }
+
+  async repostInfo(trackId: number, userId?: number) {
+    const count = await this.repostsRepository.count({ where: { trackId } });
+    let reposted = false;
+    if (userId) reposted = !!(await this.repostsRepository.findOne({ where: { userId, trackId } }));
+    return { count, reposted };
+  }
+
+  async getUserReposts(userId: number): Promise<Track[]> {
+    const reposts = await this.repostsRepository.find({
+      where: { userId },
+      relations: ['track', 'track.user'],
+      order: { created_at: 'DESC' },
+    });
+    return reposts.map((r) => r.track).filter(Boolean);
+  }
 
   async create(body: any, file?: Express.Multer.File, cover?: Express.Multer.File, userId?: number): Promise<Track> {
     const track = new Track();
@@ -52,6 +85,7 @@ export class TracksService {
       await manager.delete('comment', { trackId: id });
       await manager.delete('like', { trackId: id });
       await manager.delete('play', { trackId: id });
+      await manager.delete('repost', { trackId: id });
       await manager.delete('playlist_track', { trackId: id });
       await manager.delete('track', { id });
     });

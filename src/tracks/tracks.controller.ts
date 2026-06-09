@@ -70,6 +70,18 @@ export class TracksController {
     return { count };
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/repost')
+  async toggleRepost(@Param('id') trackId: number, @Request() req) {
+    return this.tracksService.toggleRepost(req.user.id, trackId);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/repost-info')
+  async repostInfo(@Param('id') trackId: number, @Request() req) {
+    return this.tracksService.repostInfo(trackId, req.user?.id);
+  }
+
   @UseGuards(OptionalJwtAuthGuard)
   @Post(':id/play')
   async incrementPlay(@Param('id') id: number, @Request() req) {
@@ -91,5 +103,10 @@ export class TracksController {
   @Get('user/:userId')
   async findByUser(@Param('userId') userId: number) {
     return this.tracksService.findByUser(userId);
+  }
+
+  @Get('user/:userId/reposts')
+  async getUserReposts(@Param('userId') userId: number) {
+    return this.tracksService.getUserReposts(userId);
   }
 }

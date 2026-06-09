@@ -3,11 +3,28 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
+import { FollowService } from './follow.service';
 import { AuthGuard } from '@nestjs/passport';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly followService: FollowService,
+  ) { }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/follow')
+  async follow(@Param('id') id: number, @Request() req) {
+    return this.followService.toggle(req.user.id, Number(id));
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/follow-info')
+  async followInfo(@Param('id') id: number, @Request() req) {
+    return this.followService.info(Number(id), req.user?.id);
+  }
 
   @UseGuards(AuthGuard('jwt'))
   @Get('me')

@@ -6,14 +6,17 @@ import { extname } from 'path';
 import { mkdirSync } from 'fs';
 import { Track } from './entities/track.entity';
 import { Play } from './entities/play.entity';
+import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
 import { LikesModule } from '../likes/likes.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Track, Play, User]),
+    TypeOrmModule.forFeature([Track, Play, Repost, User]),
+    NotificationsModule,
     MulterModule.register({
       storage: diskStorage({
         destination: (req, file, cb) => {
