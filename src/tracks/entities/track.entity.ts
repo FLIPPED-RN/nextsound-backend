@@ -21,6 +21,9 @@ export class Track {
   @Column({ nullable: true })
   genre?: string;
 
+  @Column({ type: 'text', nullable: true })
+  featuring?: string | null;
+
   @Column({ type: 'int', nullable: true })
   bpm?: number;
 

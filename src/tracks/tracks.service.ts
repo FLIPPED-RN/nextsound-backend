@@ -56,6 +56,7 @@ export class TracksService {
     track.title = body.title;
     track.description = body.description || '';
     track.genre = body.genre || '';
+    track.featuring = body.featuring || null;
     track.bpm = body.bpm ? Number(body.bpm) : 0;
     track.file_path = file ? file.path.replace(/\\/g, '/') : '';
     track.cover_path = cover ? cover.path.replace(/\\/g, '/') : '';
