@@ -64,10 +64,12 @@ export class TracksController {
     return this.likesService.toggleLike(req.user.id, trackId);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/likes')
-  async getLikesCount(@Param('id') trackId: number) {
+  async getLikesCount(@Param('id') trackId: number, @Request() req) {
     const count = await this.likesService.getLikesCount(trackId);
-    return { count };
+    const liked = req.user ? await this.likesService.isLiked(req.user.id, trackId) : false;
+    return { count, liked };
   }
 
   @UseGuards(AuthGuard('jwt'))
