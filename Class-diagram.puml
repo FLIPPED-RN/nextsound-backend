@@ -1,0 +1,276 @@
+@startuml NextSound_Classes
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+hide empty members
+left to right direction
+
+package "Сущности (Entities)" #F4F6FF {
+  class User <<Entity>> {
+    +id : number
+    +firstName : string
+    +lastName : string
+    +nickname : string
+    +email : string
+    +password : string
+    +role : Role
+    +avatar : string
+    +bio : string
+    +isVerified : boolean
+    +isArtistVerified : boolean
+    +verifyCode : string
+    +verifyExpires : number
+    +created_at : Date
+    +updated_at : Date
+  }
+  class Track <<Entity>> {
+    +id : number
+    +title : string
+    +description : string
+    +genre : string
+    +featuring : string
+    +bpm : number
+    +file_path : string
+    +cover_path : string
+    +visibility : TrackVisibility
+    +release_date : Date
+    +userId : number
+    +plays_count : number
+    +size : number
+    +isFeatured : boolean
+    +created_at : Date
+    +updated_at : Date
+  }
+  class Playlist <<Entity>> {
+    +id : number
+    +name : string
+    +userId : number
+    +created_at : Date
+  }
+  class PlaylistTrack <<Entity>> {
+    +id : number
+    +playlistId : number
+    +trackId : number
+  }
+  class Comment <<Entity>> {
+    +id : number
+    +text : string
+    +userId : number
+    +trackId : number
+    +parentId : number
+    +created_at : Date
+  }
+  class CommentLike <<Entity>> {
+    +id : number
+    +userId : number
+    +commentId : number
+  }
+  class Like <<Entity>> {
+    +id : number
+    +userId : number
+    +trackId : number
+  }
+  class Play <<Entity>> {
+    +id : number
+    +userId : number
+    +trackId : number
+  }
+  class Repost <<Entity>> {
+    +id : number
+    +userId : number
+    +trackId : number
+  }
+  class Follow <<Entity>> {
+    +id : number
+    +followerId : number
+    +followingId : number
+  }
+  class Notification <<Entity>> {
+    +id : number
+    +userId : number
+    +actorId : number
+    +type : string
+    +trackId : number
+    +commentId : number
+    +isRead : boolean
+    +created_at : Date
+  }
+  enum Role {
+    listener
+    artist
+    admin
+  }
+  enum TrackVisibility {
+    public
+    private
+    link
+  }
+}
+
+package "Сервисы (Services)" #F0FFF4 {
+  class AuthService <<Service>> {
+    +validateUser(email, pass)
+    +login(user)
+    +create(dto)
+    +verifyEmail(email, code)
+    +resend(email)
+    -genCode() : string
+    -generateToken(user)
+  }
+  class UsersService <<Service>> {
+    +create(dto)
+    +findOneByEmail(email)
+    +findOneById(id)
+    +profile(id)
+    +updateMe(id, data)
+    +setAvatar(id, path)
+    +setVerifyCode(id, code, exp)
+    +markVerified(id)
+    +getPublicProfile(id)
+    +hashPassword() / comparePassword()
+  }
+  class FollowService <<Service>> {
+    +toggle(followerId, followingId)
+    +info(userId, currentUserId?)
+  }
+  class TracksService <<Service>> {
+    +create(body, file, cover, userId)
+    +findAll() / findOne(id) / findByUser(id)
+    +update(id, userId, data)
+    +remove(id, userId)
+    +removeAsAdmin(id)
+    +recordPlay(trackId, userId?)
+    +search(query)
+    +toggleRepost(userId, trackId)
+    +repostInfo(trackId, userId?)
+    +getUserReposts(userId)
+  }
+  class LikesService <<Service>> {
+    +toggleLike(userId, trackId)
+    +getLikesCount(trackId)
+    +isLiked(userId, trackId)
+    +getUserLikedTracks(userId)
+  }
+  class CommentsService <<Service>> {
+    +create(userId, trackId, dto)
+    +findByTrack(trackId, userId?)
+    +toggleLike(userId, commentId)
+    +remove(id, userId)
+  }
+  class PlaylistsService <<Service>> {
+    +create(userId, name)
+    +findAllByUser(userId)
+    +getTracks(playlistId)
+    +addTrack(playlistId, userId, trackId)
+    +removeTrack(playlistId, userId, trackId)
+    +remove(id, userId)
+  }
+  class NotificationsService <<Service>> {
+    +notify(userId, type, opts)
+    +list(userId)
+    +unreadCount(userId)
+    +markAllRead(userId)
+  }
+  class AdminService <<Service>> {
+    +getStats()
+    +listTracks() / deleteTrack(id)
+    +setFeatured(id, featured)
+    +listUsers() / setRole(id, role)
+    +setArtistVerified(id, verified)
+    +deleteUser(id)
+    +listComments() / deleteComment(id)
+  }
+  class MailService <<Service>> {
+    +sendVerificationCode(to, code)
+  }
+}
+
+package "Контроллеры (Controllers)" #FFF7F0 {
+  class AuthController <<Controller>> {
+    +login() +signUp() +verify()
+    +resend() +logout()
+  }
+  class UsersController <<Controller>> {
+    +getProfile() +updateMe() +uploadAvatar()
+    +follow() +followInfo() +getPublicProfile()
+  }
+  class TracksController <<Controller>> {
+    +create() +findAll() +findOne() +search()
+    +getMyTracks() +getLikedTracks()
+    +toggleLike() +getLikesCount()
+    +toggleRepost() +repostInfo()
+    +incrementPlay() +update() +remove()
+    +findByUser() +getUserReposts()
+  }
+  class CommentsController <<Controller>> {
+    +create() +findByTrack() +like() +remove()
+  }
+  class PlaylistsController <<Controller>> {
+    +create() +getMyPlaylists() +getOne()
+    +getTracks() +addTrack() +removeTrack() +remove()
+  }
+  class NotificationsController <<Controller>> {
+    +list() +unread() +markRead()
+  }
+  class AdminController <<Controller>> {
+    +stats() +tracks() +deleteTrack() +setFeatured()
+    +users() +setRole() +setArtistVerified()
+    +deleteUser() +comments() +deleteComment()
+  }
+}
+
+package "Безопасность (Auth)" #F7F0FF {
+  class JwtStrategy <<Guard>>
+  class LocalStrategy <<Guard>>
+  class AdminGuard <<Guard>>
+  class OptionalJwtAuthGuard <<Guard>>
+}
+
+' ---- Контроллер -> Сервис ----
+AuthController ..> AuthService
+UsersController ..> UsersService
+UsersController ..> FollowService
+TracksController ..> TracksService
+TracksController ..> LikesService
+CommentsController ..> CommentsService
+PlaylistsController ..> PlaylistsService
+NotificationsController ..> NotificationsService
+AdminController ..> AdminService
+
+' ---- Зависимости между сервисами ----
+AuthService ..> UsersService
+AuthService ..> MailService
+FollowService ..> NotificationsService
+TracksService ..> NotificationsService
+LikesService ..> NotificationsService
+CommentsService ..> NotificationsService
+AdminService ..> TracksService
+
+' ---- Сервис -> Сущность (репозитории) ----
+UsersService --> User
+FollowService --> Follow
+TracksService --> Track
+TracksService --> Play
+TracksService --> Repost
+LikesService --> Like
+CommentsService --> Comment
+CommentsService --> CommentLike
+PlaylistsService --> Playlist
+PlaylistsService --> PlaylistTrack
+NotificationsService --> Notification
+AdminService --> User
+
+' ---- Ассоциации сущностей ----
+User "1" --> "*" Track
+User "1" --> "*" Playlist
+Track "1" --> "*" Comment
+Comment "1" --> "*" Comment : parentId
+Playlist "1" --> "*" PlaylistTrack
+Track "1" --> "*" PlaylistTrack
+User ||--o{ Follow
+User ||--o{ Notification
+
+User --> Role
+Track --> TrackVisibility
+
+@enduml

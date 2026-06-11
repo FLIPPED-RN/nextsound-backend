@@ -1,0 +1,173 @@
+@startuml NextSound_ER
+' ER-диаграмма базы данных NextSound (актуальная)
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam entity {
+  BackgroundColor #F4F6FF
+  BorderColor #5B7CFA
+  ArrowColor #6E6E8A
+}
+
+entity "user" as user {
+  * id : INT <<PK>>
+  --
+  firstName : TEXT
+  lastName : TEXT
+  nickname : TEXT
+  email : TEXT
+  password : TEXT
+  role : ENUM(listener, artist, admin)
+  avatar : TEXT
+  bio : TEXT
+  isVerified : BOOL
+  isArtistVerified : BOOL
+  verifyCode : VARCHAR(6)
+  verifyExpires : BIGINT
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "track" as track {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  --
+  title : VARCHAR
+  description : VARCHAR
+  genre : VARCHAR
+  featuring : TEXT
+  bpm : INT
+  file_path : VARCHAR
+  cover_path : VARCHAR
+  visibility : ENUM(public, private, link)
+  release_date : DATETIME
+  plays_count : INT
+  size : BIGINT
+  isFeatured : BOOL
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "playlist" as playlist {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  --
+  name : VARCHAR
+  created_at : DATETIME
+  updated_at : DATETIME
+}
+
+entity "playlist_track" as playlist_track {
+  * id : INT <<PK>>
+  --
+  # playlistId : INT <<FK>>
+  # trackId : INT <<FK>>
+}
+
+entity "comment" as comment {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # trackId : INT <<FK>>
+  # parentId : INT <<FK, self>>
+  --
+  text : TEXT
+  created_at : DATETIME
+}
+
+entity "comment_like" as comment_like {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # commentId : INT <<FK>>
+  --
+  created_at : DATETIME
+  .. UNIQUE(userId, commentId) ..
+}
+
+entity "like" as like {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # trackId : INT <<FK>>
+  --
+  created_at : DATETIME
+  .. UNIQUE(userId, trackId) ..
+}
+
+entity "play" as play {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # trackId : INT <<FK>>
+  --
+  created_at : DATETIME
+  .. UNIQUE(userId, trackId) ..
+}
+
+entity "repost" as repost {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # trackId : INT <<FK>>
+  --
+  created_at : DATETIME
+  .. UNIQUE(userId, trackId) ..
+}
+
+entity "follow" as follow {
+  * id : INT <<PK>>
+  --
+  # followerId : INT <<FK>>
+  # followingId : INT <<FK>>
+  --
+  created_at : DATETIME
+  .. UNIQUE(followerId, followingId) ..
+}
+
+entity "notification" as notification {
+  * id : INT <<PK>>
+  --
+  # userId : INT <<FK>>
+  # actorId : INT <<FK>>
+  --
+  type : VARCHAR
+  trackId : INT
+  commentId : INT
+  isRead : BOOL
+  created_at : DATETIME
+}
+
+' ---- Relations ----
+user ||--o{ track           : owns
+user ||--o{ playlist
+user ||--o{ comment
+user ||--o{ like
+user ||--o{ play
+user ||--o{ repost
+user ||--o{ comment_like
+
+track ||--o{ comment
+track ||--o{ like
+track ||--o{ play
+track ||--o{ repost
+track ||--o{ playlist_track
+
+playlist ||--o{ playlist_track
+
+comment ||--o{ comment_like
+comment ||--o{ comment       : parentId
+
+user ||--o{ follow           : follower
+user ||--o{ follow           : following
+
+user ||--o{ notification     : recipient
+user ||--o{ notification     : actor
+
+notification ..> track       : trackId
+notification ..> comment     : commentId
+
+@enduml
