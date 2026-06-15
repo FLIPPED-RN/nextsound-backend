@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { existsSync, unlinkSync } from 'fs';
 import { Track, TrackVisibility } from './entities/track.entity';
 import { Play } from './entities/play.entity';
 import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
 import { Role } from '../auth/role.enum';
 import { NotificationsService } from '../notifications/notifications.service';
+import { S3Service } from '../storage/s3.service';
 
 @Injectable()
 export class TracksService {
@@ -21,6 +21,7 @@ export class TracksService {
     @InjectRepository(Repost)
     private repostsRepository: Repository<Repost>,
     private notifications: NotificationsService,
+    private s3: S3Service,
   ) { }
 
   async toggleRepost(userId: number, trackId: number) {
@@ -58,8 +59,8 @@ export class TracksService {
     track.genre = body.genre || '';
     track.featuring = body.featuring || null;
     track.bpm = body.bpm ? Number(body.bpm) : 0;
-    track.file_path = file ? file.path.replace(/\\/g, '/') : '';
-    track.cover_path = cover ? cover.path.replace(/\\/g, '/') : '';
+    track.file_path = file ? await this.s3.uploadFile(file, 'audio') : '';
+    track.cover_path = cover ? await this.s3.uploadFile(cover, 'covers') : '';
     track.size = file?.size || 0;
     if (body.visibility) track.visibility = body.visibility;
     track.userId = userId!;
@@ -72,12 +73,10 @@ export class TracksService {
     return saved;
   }
 
-  private deleteFiles(track: Track) {
+  private async deleteFiles(track: Track) {
     for (const p of [track.file_path, track.cover_path]) {
       if (!p) continue;
-      try {
-        if (existsSync(p)) unlinkSync(p);
-      } catch { }
+      await this.s3.deleteByUrl(p);
     }
   }
 
@@ -124,13 +123,13 @@ export class TracksService {
   async remove(id: number, userId: number): Promise<void> {
     const track = await this.findOne(id);
     if (track.userId !== userId) throw new ForbiddenException('Вы не можете удалить чужой трек');
-    this.deleteFiles(track);
+    await this.deleteFiles(track);
     await this.cascadeDelete(id);
   }
 
   async removeAsAdmin(id: number): Promise<void> {
     const track = await this.findOne(id);
-    this.deleteFiles(track);
+    await this.deleteFiles(track);
     await this.cascadeDelete(id);
   }
 

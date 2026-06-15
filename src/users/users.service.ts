@@ -4,12 +4,14 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { S3Service } from '../storage/s3.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private s3: S3Service,
   ) { }
 
   async create(user: CreateUserDto): Promise<User> {
@@ -43,6 +45,14 @@ export class UsersService {
   async setAvatar(id: number, avatarPath: string) {
     await this.usersRepository.update({ id }, { avatar: avatarPath });
     return this.getPublicProfile(id);
+  }
+
+  async uploadAvatar(id: number, file?: Express.Multer.File) {
+    if (!file) return this.getPublicProfile(id);
+    const current = await this.findOneById(id);
+    if (current?.avatar) await this.s3.deleteByUrl(current.avatar);
+    const url = await this.s3.uploadFile(file, 'avatars');
+    return this.setAvatar(id, url);
   }
 
   async setVerifyCode(id: number, code: string, expires: number) {

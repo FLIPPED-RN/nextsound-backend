@@ -42,8 +42,7 @@ export class UsersController {
   @Post('me/avatar')
   @UseInterceptors(FileInterceptor('avatar'))
   async uploadAvatar(@Request() req, @UploadedFile() file: Express.Multer.File) {
-    const path = file ? file.path.replace(/\\/g, '/') : '';
-    return this.usersService.setAvatar(req.user.id, path);
+    return this.usersService.uploadAvatar(req.user.id, file);
   }
 
   @Get(':id')

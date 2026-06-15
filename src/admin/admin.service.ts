@@ -1,8 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
 import { User } from '../users/entities/user.entity';
 import { Track } from '../tracks/entities/track.entity';
 import { Play } from '../tracks/entities/play.entity';
@@ -12,24 +10,7 @@ import { Playlist } from '../playlists/entities/playlist.entity';
 import { PlaylistTrack } from '../playlists/entities/playlist-track.entity';
 import { TracksService } from '../tracks/tracks.service';
 import { Role } from '../auth/role.enum';
-
-function dirSize(dir: string): number {
-  let total = 0;
-  let entries: any[];
-  try {
-    entries = readdirSync(dir, { withFileTypes: true });
-  } catch {
-    return 0;
-  }
-  for (const e of entries) {
-    const p = join(dir, e.name);
-    if (e.isDirectory()) total += dirSize(p);
-    else {
-      try { total += statSync(p).size; } catch { }
-    }
-  }
-  return total;
-}
+import { S3Service } from '../storage/s3.service';
 
 @Injectable()
 export class AdminService {
@@ -42,6 +23,7 @@ export class AdminService {
     @InjectRepository(Playlist) private playlists: Repository<Playlist>,
     @InjectRepository(PlaylistTrack) private playlistTracks: Repository<PlaylistTrack>,
     private tracksService: TracksService,
+    private s3: S3Service,
   ) { }
 
   private clean(user: User) {
@@ -87,10 +69,11 @@ export class AdminService {
       .where('t.created_at >= :d', { d: weekAgo })
       .getCount();
 
-    const base = join(process.cwd(), 'uploads');
-    const audioBytes = dirSize(join(base, 'audio'));
-    const coverBytes = dirSize(join(base, 'covers'));
-    const avatarBytes = dirSize(join(base, 'avatars'));
+    const [audioBytes, coverBytes, avatarBytes] = await Promise.all([
+      this.s3.folderSize('audio'),
+      this.s3.folderSize('covers'),
+      this.s3.folderSize('avatars'),
+    ]);
     const totalBytes = audioBytes + coverBytes + avatarBytes;
 
     const topTracks = await this.tracks.find({
