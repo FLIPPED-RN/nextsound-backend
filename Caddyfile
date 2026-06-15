@@ -12,6 +12,15 @@
 		reverse_proxy 127.0.0.1:3000
 	}
 
+	@ogbots {
+		path_regexp ogtrack ^/track/(\d+)/?$
+		header_regexp ua User-Agent (?i)(bot|facebookexternalhit|whatsapp|telegram|vkshare|discord|slack|skype|embed|preview|twitter|pinterest|linkedin|google|bing|yandex)
+	}
+	handle @ogbots {
+		rewrite * /og/track/{re.ogtrack.1}
+		reverse_proxy 127.0.0.1:3000
+	}
+
 	handle {
 		try_files {path} /index.html
 		file_server

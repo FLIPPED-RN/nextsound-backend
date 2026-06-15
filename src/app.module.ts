@@ -10,6 +10,8 @@ import { CommentsModule } from './comments/comments.module';
 import { AdminModule } from './admin/admin.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { StorageModule } from './storage/storage.module';
+import { ReportsModule } from './reports/reports.module';
+import { OgModule } from './og/og.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { StorageModule } from './storage/storage.module';
     CommentsModule,
     AdminModule,
     NotificationsModule,
+    ReportsModule,
+    OgModule,
   ],
 })
 export class AppModule {}

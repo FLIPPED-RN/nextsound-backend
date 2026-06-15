@@ -27,6 +27,12 @@ export class User {
   avatar?: string;
 
   @Column({ type: 'text', nullable: true })
+  banner?: string;
+
+  @Column({ type: 'text', nullable: true })
+  links?: string;
+
+  @Column({ type: 'text', nullable: true })
   bio?: string;
 
   @Column({ default: false })

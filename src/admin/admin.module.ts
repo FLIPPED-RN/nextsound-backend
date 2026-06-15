@@ -9,11 +9,12 @@ import { Like } from '../likes/entities/like.entity';
 import { Comment } from '../comments/entities/comment.entity';
 import { Playlist } from '../playlists/entities/playlist.entity';
 import { PlaylistTrack } from '../playlists/entities/playlist-track.entity';
+import { Report } from '../reports/entities/report.entity';
 import { TracksModule } from '../tracks/tracks.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Track, Play, Like, Comment, Playlist, PlaylistTrack]),
+    TypeOrmModule.forFeature([User, Track, Play, Like, Comment, Playlist, PlaylistTrack, Report]),
     TracksModule,
   ],
   controllers: [AdminController],

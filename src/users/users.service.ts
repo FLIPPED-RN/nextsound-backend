@@ -32,12 +32,13 @@ export class UsersService {
     return this.userResponse(user);
   }
 
-  async updateMe(id: number, data: Partial<Pick<User, 'firstName' | 'lastName' | 'nickname' | 'bio'>>) {
+  async updateMe(id: number, data: Partial<Pick<User, 'firstName' | 'lastName' | 'nickname' | 'bio' | 'links'>>) {
     const clean: Partial<User> = {};
     if (data.firstName !== undefined) clean.firstName = data.firstName;
     if (data.lastName !== undefined) clean.lastName = data.lastName;
     if (data.nickname !== undefined) clean.nickname = data.nickname;
     if (data.bio !== undefined) clean.bio = data.bio;
+    if (data.links !== undefined) clean.links = data.links;
     await this.usersRepository.update({ id }, clean);
     return this.getPublicProfile(id);
   }
@@ -53,6 +54,15 @@ export class UsersService {
     if (current?.avatar) await this.s3.deleteByUrl(current.avatar);
     const url = await this.s3.uploadFile(file, 'avatars');
     return this.setAvatar(id, url);
+  }
+
+  async uploadBanner(id: number, file?: Express.Multer.File) {
+    if (!file) return this.getPublicProfile(id);
+    const current = await this.findOneById(id);
+    if (current?.banner) await this.s3.deleteByUrl(current.banner);
+    const url = await this.s3.uploadFile(file, 'banners');
+    await this.usersRepository.update({ id }, { banner: url });
+    return this.getPublicProfile(id);
   }
 
   async setVerifyCode(id: number, code: string, expires: number) {

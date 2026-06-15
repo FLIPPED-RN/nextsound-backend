@@ -57,4 +57,14 @@ export class AdminController {
   deleteComment(@Param('id') id: number) {
     return this.adminService.deleteComment(id);
   }
+
+  @Get('reports')
+  reports() {
+    return this.adminService.listReports();
+  }
+
+  @Delete('reports/:id')
+  dismissReport(@Param('id') id: number) {
+    return this.adminService.dismissReport(id);
+  }
 }

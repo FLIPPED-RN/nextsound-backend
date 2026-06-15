@@ -55,6 +55,13 @@ export class UsersController {
     return this.usersService.uploadAvatar(req.user.id, file);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('me/banner')
+  @UseInterceptors(FileInterceptor('banner'))
+  async uploadBanner(@Request() req, @UploadedFile() file: Express.Multer.File) {
+    return this.usersService.uploadBanner(req.user.id, file);
+  }
+
   @Get(':id')
   async getPublicProfile(@Param('id') id: number) {
     return this.usersService.getPublicProfile(id);

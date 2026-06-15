@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Track } from '../tracks/entities/track.entity';
 import { Play } from '../tracks/entities/play.entity';
@@ -8,6 +8,7 @@ import { Like } from '../likes/entities/like.entity';
 import { Comment } from '../comments/entities/comment.entity';
 import { Playlist } from '../playlists/entities/playlist.entity';
 import { PlaylistTrack } from '../playlists/entities/playlist-track.entity';
+import { Report } from '../reports/entities/report.entity';
 import { TracksService } from '../tracks/tracks.service';
 import { Role } from '../auth/role.enum';
 import { S3Service } from '../storage/s3.service';
@@ -22,9 +23,31 @@ export class AdminService {
     @InjectRepository(Comment) private comments: Repository<Comment>,
     @InjectRepository(Playlist) private playlists: Repository<Playlist>,
     @InjectRepository(PlaylistTrack) private playlistTracks: Repository<PlaylistTrack>,
+    @InjectRepository(Report) private reports: Repository<Report>,
     private tracksService: TracksService,
     private s3: S3Service,
   ) { }
+
+  async listReports() {
+    const reports = await this.reports.find({ order: { created_at: 'DESC' }, take: 200 });
+    if (!reports.length) return [];
+    const trackIds = [...new Set(reports.map((r) => r.trackId))];
+    const userIds = [...new Set(reports.map((r) => r.userId))];
+    const tracks = await this.tracks.find({ where: { id: In(trackIds) }, relations: ['user'] });
+    const users = await this.users.find({ where: { id: In(userIds) } });
+    const tMap = new Map(tracks.map((t) => [t.id, { ...t, user: t.user ? this.clean(t.user) : null }]));
+    const uMap = new Map(users.map((u) => [u.id, this.clean(u)]));
+    return reports.map((r) => ({
+      ...r,
+      track: tMap.get(r.trackId) || null,
+      reporter: uMap.get(r.userId) || null,
+    }));
+  }
+
+  async dismissReport(id: number) {
+    await this.reports.delete({ id });
+    return { ok: true };
+  }
 
   private clean(user: User) {
     const { password, ...rest } = user as any;
