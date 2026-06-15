@@ -1,5 +1,5 @@
 import {
-  Body, Controller, Get, Param, Patch, Post, Request, UploadedFile, UseGuards, UseInterceptors,
+  Body, Controller, Get, Param, Patch, Post, Request, UploadedFile, UseGuards, UseInterceptors, BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
@@ -36,6 +36,16 @@ export class UsersController {
   @Patch('me')
   async updateMe(@Request() req, @Body() body: any) {
     return this.usersService.updateMe(req.user.id, body);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('me/password')
+  async changePassword(@Request() req, @Body() body: { oldPassword: string; newPassword: string }) {
+    if (!body.newPassword || body.newPassword.length < 6) {
+      throw new BadRequestException('Новый пароль должен быть не короче 6 символов');
+    }
+    await this.usersService.changePasswod(req.user.id, body.oldPassword, body.newPassword);
+    return { ok: true };
   }
 
   @UseGuards(AuthGuard('jwt'))

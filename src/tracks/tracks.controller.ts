@@ -40,6 +40,17 @@ export class TracksController {
     return this.tracksService.search(query);
   }
 
+  @Get('trending')
+  async trending() {
+    return this.tracksService.trending();
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('history')
+  async history(@Request() req) {
+    return this.tracksService.history(req.user.id);
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('my')
   async getMyTracks(@Request() req) {
@@ -60,6 +71,11 @@ export class TracksController {
   @Get(':id')
   async findOne(@Param('id') id: number) {
     return this.tracksService.findOne(id);
+  }
+
+  @Get(':id/similar')
+  async similar(@Param('id') id: number) {
+    return this.tracksService.similar(id);
   }
 
   @Get(':id/download')

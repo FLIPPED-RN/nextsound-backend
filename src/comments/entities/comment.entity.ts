@@ -31,6 +31,9 @@ export class Comment {
   @Column({ type: 'int', nullable: true })
   parentId?: number | null;
 
+  @Column({ type: 'float', nullable: true })
+  timestamp?: number | null;
+
   @CreateDateColumn()
   created_at!: Date;
 }

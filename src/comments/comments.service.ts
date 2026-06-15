@@ -29,7 +29,13 @@ export class CommentsService {
     dto: CreateCommentDto,
   ): Promise<Comment> {
     const comment = await this.commentsRepository.save(
-      this.commentsRepository.create({ text: dto.text, userId, trackId, parentId: dto.parentId ?? null }),
+      this.commentsRepository.create({
+        text: dto.text,
+        userId,
+        trackId,
+        parentId: dto.parentId ?? null,
+        timestamp: dto.parentId ? null : (dto.timestamp ?? null),
+      }),
     );
 
     const track = await this.tracks.findOne({ where: { id: trackId } });

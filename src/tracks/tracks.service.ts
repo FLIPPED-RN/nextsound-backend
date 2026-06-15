@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Track, TrackVisibility } from './entities/track.entity';
 import { Play } from './entities/play.entity';
 import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
+import { Follow } from '../users/entities/follow.entity';
 import { Role } from '../auth/role.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { S3Service } from '../storage/s3.service';
@@ -20,6 +21,8 @@ export class TracksService {
     private usersRepository: Repository<User>,
     @InjectRepository(Repost)
     private repostsRepository: Repository<Repost>,
+    @InjectRepository(Follow)
+    private followsRepository: Repository<Follow>,
     private notifications: NotificationsService,
     private s3: S3Service,
   ) { }
@@ -68,9 +71,85 @@ export class TracksService {
 
     if (userId) {
       await this.usersRepository.update({ id: userId, role: Role.Listener }, { role: Role.Artist });
+
+      if (saved.visibility === TrackVisibility.PUBLIC) {
+        const followers = await this.followsRepository.find({ where: { followingId: userId } });
+        for (const f of followers) {
+          await this.notifications.notify(f.followerId, 'new_track', { actorId: userId, trackId: saved.id });
+        }
+      }
     }
 
     return saved;
+  }
+
+  async trending(): Promise<Track[]> {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const rows = await this.playsRepository
+      .createQueryBuilder('p')
+      .select('p.trackId', 'trackId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('p.created_at >= :d', { d: weekAgo })
+      .groupBy('p.trackId')
+      .orderBy('cnt', 'DESC')
+      .limit(12)
+      .getRawMany();
+
+    const ids = rows.map((r) => Number(r.trackId));
+    if (!ids.length) {
+      return this.tracksRepository.find({
+        where: { visibility: TrackVisibility.PUBLIC },
+        relations: ['user'],
+        order: { plays_count: 'DESC' },
+        take: 12,
+      });
+    }
+
+    const tracks = await this.tracksRepository.find({
+      where: { id: In(ids), visibility: TrackVisibility.PUBLIC },
+      relations: ['user'],
+    });
+    const map = new Map(tracks.map((t) => [t.id, t]));
+    return ids.map((id) => map.get(id)).filter(Boolean) as Track[];
+  }
+
+  async similar(id: number): Promise<Track[]> {
+    const track = await this.findOne(id);
+    const qb = this.tracksRepository
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.user', 'user')
+      .where('t.id != :id', { id })
+      .andWhere('t.visibility = :v', { v: TrackVisibility.PUBLIC });
+    if (track.genre) qb.andWhere('t.genre = :g', { g: track.genre });
+    const result = await qb.orderBy('t.plays_count', 'DESC').limit(8).getMany();
+
+    if (result.length < 4) {
+      const extra = await this.tracksRepository.find({
+        where: { visibility: TrackVisibility.PUBLIC },
+        relations: ['user'],
+        order: { plays_count: 'DESC' },
+        take: 12,
+      });
+      const seen = new Set(result.map((t) => t.id));
+      seen.add(id);
+      for (const e of extra) {
+        if (result.length >= 8) break;
+        if (!seen.has(e.id)) { result.push(e); seen.add(e.id); }
+      }
+    }
+    return result;
+  }
+
+  async history(userId: number): Promise<Track[]> {
+    const plays = await this.playsRepository.find({
+      where: { userId },
+      relations: ['track', 'track.user'],
+      order: { created_at: 'DESC' },
+      take: 20,
+    });
+    return plays
+      .map((p) => p.track)
+      .filter((t) => t && t.visibility === TrackVisibility.PUBLIC);
   }
 
   private async deleteFiles(track: Track) {

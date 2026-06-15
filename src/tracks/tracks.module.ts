@@ -6,6 +6,7 @@ import { Track } from './entities/track.entity';
 import { Play } from './entities/play.entity';
 import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
+import { Follow } from '../users/entities/follow.entity';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
 import { LikesModule } from '../likes/likes.module';
@@ -13,7 +14,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Track, Play, Repost, User]),
+    TypeOrmModule.forFeature([Track, Play, Repost, User, Follow]),
     NotificationsModule,
     MulterModule.register({
       storage: memoryStorage(),
