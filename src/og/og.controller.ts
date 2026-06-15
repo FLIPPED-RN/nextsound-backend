@@ -47,6 +47,8 @@ export class OgController {
 <meta property="og:title" content="${title}">
 <meta property="og:description" content="${desc}">
 <meta property="og:image" content="${cover}">
+<meta property="og:image:secure_url" content="${cover}">
+<meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="600">
 <meta property="og:image:height" content="600">
 <meta property="og:url" content="${url}">
@@ -55,10 +57,12 @@ export class OgController {
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${desc}">
 <meta name="twitter:image" content="${cover}">
-<meta http-equiv="refresh" content="0; url=${url}">
 <link rel="canonical" href="${url}">
 </head>
-<body>Открываю <a href="${url}">${title}</a> на NextSound…</body>
+<body>
+<p>Открываю <a href="${url}">${title}</a> на NextSound…</p>
+<script>location.replace(${JSON.stringify(url)});</script>
+</body>
 </html>`;
 
     res.set('Content-Type', 'text/html; charset=utf-8');
