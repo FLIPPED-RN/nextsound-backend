@@ -4,7 +4,9 @@ import {
   PutObjectCommand,
   DeleteObjectCommand,
   ListObjectsV2Command,
+  GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 import { extname } from 'path';
 
 @Injectable()
@@ -66,6 +68,18 @@ export class S3Service {
     } catch (e) {
       this.logger.warn(`Не удалось удалить ${key}: ${(e as Error).message}`);
     }
+  }
+
+  async getStream(url?: string | null): Promise<{ body: Readable; contentType?: string; contentLength?: number } | null> {
+    const key = this.keyFromUrl(url);
+    if (!key) return null;
+    const res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    if (!res.Body) return null;
+    return {
+      body: res.Body as Readable,
+      contentType: res.ContentType,
+      contentLength: res.ContentLength,
+    };
   }
 
   async folderSize(prefix: string): Promise<number> {

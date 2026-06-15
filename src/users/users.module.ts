@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { BadRequestException, Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { memoryStorage } from 'multer';
@@ -16,6 +16,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
     MulterModule.register({
       storage: memoryStorage(),
       limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const ok = file.mimetype.startsWith('image/');
+        cb(ok ? null : new BadRequestException('Аватар должен быть изображением'), ok);
+      },
     }),
   ],
   controllers: [UsersController],

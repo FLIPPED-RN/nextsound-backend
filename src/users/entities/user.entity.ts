@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Role } from '../../auth/role.enum';
 
 @Entity()
@@ -19,6 +20,7 @@ export class User {
   email!: string;
 
   @Column('text')
+  @Exclude()
   password!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -34,9 +36,11 @@ export class User {
   isArtistVerified!: boolean;
 
   @Column({ type: 'varchar', length: 6, nullable: true })
+  @Exclude()
   verifyCode?: string | null;
 
   @Column({ type: 'bigint', nullable: true })
+  @Exclude()
   verifyExpires?: number | null;
 
   @Column({ type: 'enum', enum: Role, default: Role.Listener })

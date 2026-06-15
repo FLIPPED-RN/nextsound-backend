@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { BadRequestException, Module } from '@nestjs/common';
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { memoryStorage } from 'multer';
@@ -18,6 +18,12 @@ import { NotificationsModule } from '../notifications/notifications.module';
     MulterModule.register({
       storage: memoryStorage(),
       limits: { fileSize: 100 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const ok = file.fieldname === 'cover'
+          ? file.mimetype.startsWith('image/')
+          : file.mimetype.startsWith('audio/');
+        cb(ok ? null : new BadRequestException('Недопустимый тип файла'), ok);
+      },
     }),
     LikesModule
   ],

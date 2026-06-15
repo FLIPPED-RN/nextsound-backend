@@ -116,7 +116,16 @@ export class TracksService {
   async update(id: number, userId: number, updateData: Partial<Track>): Promise<Track> {
     const track = await this.findOne(id);
     if (track.userId !== userId) throw new ForbiddenException('Вы не можете редактировать чужой трек');
-    await this.tracksRepository.update(id, updateData);
+
+    const clean: Partial<Track> = {};
+    if (updateData.title !== undefined) clean.title = updateData.title;
+    if (updateData.description !== undefined) clean.description = updateData.description;
+    if (updateData.genre !== undefined) clean.genre = updateData.genre;
+    if (updateData.featuring !== undefined) clean.featuring = updateData.featuring;
+    if (updateData.bpm !== undefined) clean.bpm = Number(updateData.bpm) || 0;
+    if (updateData.visibility !== undefined) clean.visibility = updateData.visibility;
+
+    await this.tracksRepository.update(id, clean);
     return this.findOne(id);
   }
 
