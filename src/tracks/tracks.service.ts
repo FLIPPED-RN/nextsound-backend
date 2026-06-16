@@ -169,6 +169,10 @@ export class TracksService {
 
   private async cascadeDelete(id: number) {
     await this.tracksRepository.manager.transaction(async (manager) => {
+      await manager.query(
+        'DELETE cl FROM comment_like cl INNER JOIN comment c ON cl.commentId = c.id WHERE c.trackId = ?',
+        [id],
+      );
       await manager.delete('comment', { trackId: id });
       await manager.delete('like', { trackId: id });
       await manager.delete('play', { trackId: id });
