@@ -22,6 +22,11 @@ export class AlbumsController {
     return this.albumsService.listForUpload(req.user.id);
   }
 
+  @Get('recent')
+  async recent() {
+    return this.albumsService.recent();
+  }
+
   @Get('user/:userId')
   async byUser(@Param('userId') userId: number) {
     return this.albumsService.findByUser(userId);

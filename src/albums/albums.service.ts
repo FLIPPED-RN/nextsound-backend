@@ -21,6 +21,20 @@ export class AlbumsService {
     return this.albums.save(album);
   }
 
+  async recent(): Promise<any[]> {
+    const albums = await this.albums.find({ relations: ['user'], order: { created_at: 'DESC' }, take: 30 });
+    const result: any[] = [];
+    for (const a of albums) {
+      const tracks = await this.tracks.find({ where: { albumId: a.id }, order: { created_at: 'ASC' } });
+      if (!tracks.length) continue;
+      const cover = a.cover_path || tracks[0]?.cover_path || null;
+      const { password, verifyCode, verifyExpires, ...user } = (a.user || {}) as any;
+      result.push({ ...a, user, cover_path: cover, trackCount: tracks.length });
+      if (result.length >= 12) break;
+    }
+    return result;
+  }
+
   async findByUser(userId: number): Promise<any[]> {
     const albums = await this.albums.find({ where: { userId }, order: { created_at: 'DESC' } });
     const result: any[] = [];

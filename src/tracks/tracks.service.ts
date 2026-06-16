@@ -6,6 +6,7 @@ import { Play } from './entities/play.entity';
 import { Repost } from './entities/repost.entity';
 import { User } from '../users/entities/user.entity';
 import { Follow } from '../users/entities/follow.entity';
+import { Album } from '../albums/entities/album.entity';
 import { Role } from '../auth/role.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { S3Service } from '../storage/s3.service';
@@ -23,6 +24,8 @@ export class TracksService {
     private repostsRepository: Repository<Repost>,
     @InjectRepository(Follow)
     private followsRepository: Repository<Follow>,
+    @InjectRepository(Album)
+    private albumsRepository: Repository<Album>,
     private notifications: NotificationsService,
     private s3: S3Service,
   ) { }
@@ -67,6 +70,10 @@ export class TracksService {
     track.size = file?.size || 0;
     if (body.visibility) track.visibility = body.visibility;
     if (body.albumId) track.albumId = Number(body.albumId);
+    if (!track.cover_path && track.albumId) {
+      const album = await this.albumsRepository.findOne({ where: { id: track.albumId } });
+      if (album?.cover_path) track.cover_path = album.cover_path;
+    }
     track.userId = userId!;
     const saved = await this.tracksRepository.save(track);
 
