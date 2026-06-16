@@ -66,6 +66,7 @@ export class TracksService {
     track.cover_path = cover ? await this.s3.uploadFile(cover, 'covers') : '';
     track.size = file?.size || 0;
     if (body.visibility) track.visibility = body.visibility;
+    if (body.albumId) track.albumId = Number(body.albumId);
     track.userId = userId!;
     const saved = await this.tracksRepository.save(track);
 

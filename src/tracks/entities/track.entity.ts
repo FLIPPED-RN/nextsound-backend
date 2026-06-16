@@ -45,6 +45,9 @@ export class Track {
   @Column()
   userId!: number;
 
+  @Column({ type: 'int', nullable: true })
+  albumId?: number | null;
+
   @Column({ default: 0 })
   plays_count!: number;
 
