@@ -29,8 +29,10 @@ export class AuthController {
   }
 
   @Post('signup')
-  async signUp(@Body() body: CreateUserDto) {
-    return this.authService.create(body)
+  async signUp(@Body() body: CreateUserDto, @Request() req) {
+    const fwd = req.headers['x-forwarded-for'];
+    const ip = (Array.isArray(fwd) ? fwd[0] : fwd)?.split(',')[0]?.trim() || req.ip || null;
+    return this.authService.create(body, ip)
   }
 
   @HttpCode(200)

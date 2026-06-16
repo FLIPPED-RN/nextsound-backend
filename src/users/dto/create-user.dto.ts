@@ -1,4 +1,4 @@
-import { IsDate, IsEmail, IsNotEmpty, IsNumber, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
     @IsNotEmpty({ message: 'Имя обязательно для заполнения' })
@@ -21,4 +21,16 @@ export class CreateUserDto {
     @IsNotEmpty({ message: 'Пароль обязателен для заполнения' })
     @MinLength(6)
     password!: string;
+
+    @IsOptional()
+    @IsBoolean()
+    consentPrivacy?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    consentTerms?: boolean;
+
+    @IsOptional()
+    @IsBoolean()
+    consentMarketing?: boolean;
 }

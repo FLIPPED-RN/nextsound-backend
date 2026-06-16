@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { S3Service } from '../storage/s3.service';
 
@@ -14,7 +13,7 @@ export class UsersService {
     private s3: S3Service,
   ) { }
 
-  async create(user: CreateUserDto): Promise<User> {
+  async create(user: Partial<User>): Promise<User> {
     const newUser = this.usersRepository.create(user);
     return await this.usersRepository.save(newUser);
   }

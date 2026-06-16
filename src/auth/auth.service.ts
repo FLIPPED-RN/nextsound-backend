@@ -11,6 +11,7 @@ import { Role } from './role.enum';
 import { MailService } from '../mail/mail.service';
 
 const CODE_TTL = 15 * 60 * 1000;
+const CONSENT_DOC_VERSION = '2026-06-16';
 
 @Injectable()
 export class AuthService {
@@ -48,14 +49,31 @@ export class AuthService {
     return process.env.MAIL_ENABLED === 'true';
   }
 
-  async create(user) {
+  async create(user, ip?: string | null) {
+    if (!user.consentPrivacy || !user.consentTerms) {
+      throw new BadRequestException('Необходимо принять Политику конфиденциальности и Пользовательское соглашение')
+    }
+
     const existUser = await this.usersService.findOneByEmail(user.email)
     if (existUser) {
       throw new ConflictException('Пользователь с таким Email уже существует')
     }
 
     const pass = await this.usersService.hashPassword(user.password)
-    const newUser = await this.usersService.create({ ...user, password: pass, role: Role.Listener })
+    const newUser = await this.usersService.create({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      nickname: user.nickname,
+      email: user.email,
+      password: pass,
+      role: Role.Listener,
+      consentPrivacy: true,
+      consentTerms: true,
+      consentMarketing: !!user.consentMarketing,
+      consentDocVersion: CONSENT_DOC_VERSION,
+      consentAt: new Date(),
+      consentIp: ip || null,
+    })
 
     if (!this.mailEnabled()) {
       await this.usersService.markVerified(newUser.id)

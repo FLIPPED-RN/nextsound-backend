@@ -52,6 +52,24 @@ export class User {
   @Column({ type: 'enum', enum: Role, default: Role.Listener })
   role!: Role;
 
+  @Column({ default: false })
+  consentPrivacy!: boolean;
+
+  @Column({ default: false })
+  consentTerms!: boolean;
+
+  @Column({ default: false })
+  consentMarketing!: boolean;
+
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  consentDocVersion?: string | null;
+
+  @Column({ type: 'datetime', nullable: true })
+  consentAt?: Date | null;
+
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  consentIp?: string | null;
+
   @CreateDateColumn()
   created_at!: Date;
 
