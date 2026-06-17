@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Request, UseGuards, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminGuard } from '../auth/admin.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
@@ -29,6 +30,13 @@ export class PlaylistsController {
   @Patch(':id/exclusive')
   async setExclusive(@Param('id') id: number, @Body('isExclusive') isExclusive: boolean) {
     return this.playlistsService.setExclusive(id, isExclusive);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Post(':id/cover')
+  @UseInterceptors(FileInterceptor('cover'))
+  async setCover(@Param('id') id: number, @UploadedFile() cover: Express.Multer.File) {
+    return this.playlistsService.setCover(id, cover);
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -5,6 +5,7 @@ import { Playlist } from './entities/playlist.entity';
 import { PlaylistTrack } from './entities/playlist-track.entity';
 import { User } from '../users/entities/user.entity';
 import { isSubscriber } from '../common/plans';
+import { S3Service } from '../storage/s3.service';
 
 @Injectable()
 export class PlaylistsService {
@@ -15,7 +16,17 @@ export class PlaylistsService {
     private playlistTracksRepository: Repository<PlaylistTrack>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private s3: S3Service,
   ) { }
+
+  async setCover(id: number, file?: Express.Multer.File): Promise<Playlist> {
+    const playlist = await this.findOne(id);
+    if (!file) return playlist;
+    if (playlist.cover_path) await this.s3.deleteByUrl(playlist.cover_path);
+    const url = await this.s3.uploadFile(file, 'covers');
+    await this.playlistsRepository.update(id, { cover_path: url });
+    return { ...playlist, cover_path: url };
+  }
 
   async create(userId: number, name: string, isExclusive = false): Promise<Playlist> {
     const playlist = this.playlistsRepository.create({ name, userId, isExclusive });
@@ -37,7 +48,7 @@ export class PlaylistsService {
     const result: any[] = [];
     for (const p of playlists) {
       const tracks = await this.playlistTracksRepository.find({ where: { playlistId: p.id }, relations: ['track'] });
-      const cover = tracks.find((t) => t.track?.cover_path)?.track?.cover_path || null;
+      const cover = p.cover_path || tracks.find((t) => t.track?.cover_path)?.track?.cover_path || null;
       result.push({ id: p.id, name: p.name, isExclusive: true, cover_path: cover, trackCount: tracks.length });
     }
     return result;

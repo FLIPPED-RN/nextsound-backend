@@ -18,6 +18,9 @@ export class Playlist {
   @Column({ default: false })
   isExclusive!: boolean;
 
+  @Column({ type: 'text', nullable: true })
+  cover_path?: string | null;
+
   @CreateDateColumn()
   created_at!: Date;
 
