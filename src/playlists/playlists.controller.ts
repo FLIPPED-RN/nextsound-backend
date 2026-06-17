@@ -1,5 +1,7 @@
-import { Controller, Get, Post, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminGuard } from '../auth/admin.guard';
+import { OptionalJwtAuthGuard } from '../auth/optional-jwt.guard';
 import { PlaylistsService } from './playlists.service';
 
 @Controller('playlists')
@@ -10,6 +12,23 @@ export class PlaylistsController {
   @Post()
   async create(@Request() req, @Body('name') name: string) {
     return this.playlistsService.create(req.user.id, name);
+  }
+
+  @Get('exclusive')
+  async getExclusive() {
+    return this.playlistsService.findExclusive();
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Post('exclusive')
+  async createExclusive(@Request() req, @Body('name') name: string) {
+    return this.playlistsService.create(req.user.id, name, true);
+  }
+
+  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Patch(':id/exclusive')
+  async setExclusive(@Param('id') id: number, @Body('isExclusive') isExclusive: boolean) {
+    return this.playlistsService.setExclusive(id, isExclusive);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -23,9 +42,10 @@ export class PlaylistsController {
     return this.playlistsService.findOne(id);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/tracks')
-  async getTracks(@Param('id') id: number) {
-    return this.playlistsService.getTracks(id);
+  async getTracks(@Param('id') id: number, @Request() req) {
+    return this.playlistsService.getTracks(id, req.user?.id);
   }
 
   @UseGuards(AuthGuard('jwt'))

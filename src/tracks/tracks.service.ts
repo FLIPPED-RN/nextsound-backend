@@ -10,6 +10,7 @@ import { Album } from '../albums/entities/album.entity';
 import { Role } from '../auth/role.enum';
 import { NotificationsService } from '../notifications/notifications.service';
 import { S3Service } from '../storage/s3.service';
+import { effectivePlan, UPLOAD_LIMITS } from '../common/plans';
 
 @Injectable()
 export class TracksService {
@@ -59,6 +60,19 @@ export class TracksService {
   }
 
   async create(body: any, file?: Express.Multer.File, cover?: Express.Multer.File, userId?: number): Promise<Track> {
+    if (userId) {
+      const u = await this.usersRepository.findOne({ where: { id: userId } });
+      const plan = effectivePlan(u);
+      const limit = UPLOAD_LIMITS[plan];
+      const count = await this.tracksRepository.count({ where: { userId } });
+      if (count >= limit.maxTracks) {
+        throw new ForbiddenException(`Лимит загрузок вашего тарифа — ${limit.maxTracks} треков. Оформите подписку, чтобы загружать больше.`);
+      }
+      if (file && file.size > limit.maxSizeMB * 1024 * 1024) {
+        throw new ForbiddenException(`Файл больше ${limit.maxSizeMB} МБ — это лимит вашего тарифа. Оформите подписку для больших файлов.`);
+      }
+    }
+
     const track = new Track();
     track.title = body.title;
     track.description = body.description || '';

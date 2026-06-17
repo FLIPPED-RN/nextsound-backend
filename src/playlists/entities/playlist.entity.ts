@@ -15,6 +15,9 @@ export class Playlist {
   @Column()
   userId!: number;
 
+  @Column({ default: false })
+  isExclusive!: boolean;
+
   @CreateDateColumn()
   created_at!: Date;
 

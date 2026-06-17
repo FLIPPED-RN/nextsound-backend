@@ -19,7 +19,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
     MulterModule.register({
       storage: memoryStorage(),
-      limits: { fileSize: 100 * 1024 * 1024 },
+      limits: { fileSize: 200 * 1024 * 1024 },
       fileFilter: (req, file, cb) => {
         const ok = file.fieldname === 'cover'
           ? file.mimetype.startsWith('image/')

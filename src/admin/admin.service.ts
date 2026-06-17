@@ -12,6 +12,7 @@ import { Report } from '../reports/entities/report.entity';
 import { TracksService } from '../tracks/tracks.service';
 import { Role } from '../auth/role.enum';
 import { S3Service } from '../storage/s3.service';
+import { PLAN_VALUES } from '../common/plans';
 
 @Injectable()
 export class AdminService {
@@ -162,6 +163,15 @@ export class AdminService {
       throw new NotFoundException('Неизвестная роль');
     }
     await this.users.update({ id }, { role: role as Role });
+    return this.clean((await this.users.findOne({ where: { id } }))!);
+  }
+
+  async setPlan(id: number, plan: string, days?: number) {
+    const user = await this.users.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('Пользователь не найден');
+    if (!PLAN_VALUES.includes(plan as any)) throw new NotFoundException('Неизвестный тариф');
+    const expires = plan === 'free' ? null : (days && days > 0 ? new Date(Date.now() + days * 86400000) : null);
+    await this.users.update({ id }, { plan, planExpires: expires });
     return this.clean((await this.users.findOne({ where: { id } }))!);
   }
 

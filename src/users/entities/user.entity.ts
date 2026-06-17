@@ -52,6 +52,12 @@ export class User {
   @Column({ type: 'enum', enum: Role, default: Role.Listener })
   role!: Role;
 
+  @Column({ type: 'varchar', length: 16, default: 'free' })
+  plan!: string;
+
+  @Column({ type: 'datetime', nullable: true })
+  planExpires?: Date | null;
+
   @Column({ default: false })
   consentPrivacy!: boolean;
 

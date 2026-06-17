@@ -43,6 +43,11 @@ export class AdminController {
     return this.adminService.setArtistVerified(id, verified);
   }
 
+  @Patch('users/:id/plan')
+  setPlan(@Param('id') id: number, @Body('plan') plan: string, @Body('days') days?: number) {
+    return this.adminService.setPlan(id, plan, days);
+  }
+
   @Delete('users/:id')
   deleteUser(@Param('id') id: number) {
     return this.adminService.deleteUser(id);
