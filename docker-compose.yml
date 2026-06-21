@@ -1,21 +1,6 @@
 version: '3.8'
 
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: nextsound_mysql
-    restart: unless-stopped
-    command: --performance-schema=OFF --innodb-buffer-pool-size=64M --max-connections=100
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-    ports:
-      - "127.0.0.1:3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - app_network
-
   backend:
     build: .
     container_name: nextsound_backend
@@ -23,12 +8,13 @@ services:
     ports:
       - "127.0.0.1:3000:3000"
     environment:
-      # Database
-      DB_HOST: mysql
+      # Database (external managed MySQL cluster)
+      DB_HOST: ${DB_HOST}
       DB_PORT: ${DB_PORT}
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      DB_SSL: ${DB_SSL}
       # JWT
       JWT_SECRET: ${JWT_SECRET}
       # App
@@ -55,13 +41,10 @@ services:
       YOOKASSA_RECEIPT: ${YOOKASSA_RECEIPT}
     volumes:
       - uploads_data:/app/uploads
-    depends_on:
-      - mysql
     networks:
       - app_network
 
 volumes:
-  mysql_data:
   uploads_data:
 
 networks:
