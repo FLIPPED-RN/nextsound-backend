@@ -27,6 +27,12 @@ import { PaymentsModule } from './payments/payments.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined,
+      extra: {
+        connectionLimit: 10,
+        connectTimeout: 20000,
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 10000,
+      },
       entities: [__dirname + '/**/*.entity{.ts,.js}'],
       synchronize: true,
     }),
