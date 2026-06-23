@@ -8,9 +8,9 @@ const API = 'https://api.yookassa.ru/v3';
 const SITE = (process.env.FRONTEND_URL || 'https://24nextsound.ru').replace(/\/$/, '');
 
 const PLANS: Record<string, { price: number; title: string }> = {
-  plus: { price: 99, title: 'Подписка NextSound Plus (30 дней)' },
-  artist: { price: 199, title: 'Подписка NextSound Artist (30 дней)' },
-  pro: { price: 299, title: 'Подписка NextSound Pro (30 дней)' },
+  plus: { price: 199, title: 'Подписка NextSound Plus (30 дней)' },
+  artist: { price: 399, title: 'Подписка NextSound Artist (30 дней)' },
+  pro: { price: 599, title: 'Подписка NextSound Pro (30 дней)' },
 };
 
 @Injectable()
