@@ -109,6 +109,8 @@ export class PlaylistsService {
   async remove(id: number, userId: number): Promise<void> {
     const playlist = await this.findOne(id);
     if (playlist.userId !== userId) throw new ForbiddenException('Это не ваш плейлист');
+    await this.playlistTracksRepository.delete({ playlistId: id });
+    if (playlist.cover_path) await this.s3.deleteByUrl(playlist.cover_path);
     await this.playlistsRepository.delete(id);
   }
 }
