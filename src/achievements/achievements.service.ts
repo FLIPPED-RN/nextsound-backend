@@ -5,6 +5,21 @@ import { UserAchievement } from './entities/user-achievement.entity';
 import { ACHIEVEMENTS } from './achievements.def';
 import { effectivePlan } from '../common/plans';
 
+function levelInfo(xp: number) {
+  let level = 1, need = 100, rem = xp;
+  while (rem >= need && level < 999) { rem -= need; level++; need = Math.round(need * 1.35); }
+  return { level, intoLevel: rem, nextLevelXp: need, pct: need ? Math.round((rem / need) * 100) : 0 };
+}
+
+function computeXp(m: Record<string, number>, achievements: number, streak: number, subscriber: boolean) {
+  let xp = m.listened * 5 + m.likes * 3 + m.comments * 8 + m.uploads * 40 + m.plays * 1
+    + m.followers * 20 + m.reposts * 10 + m.albums * 60 + achievements * 50 + streak * 15;
+  if (subscriber) xp *= 2;
+  return Math.round(xp);
+}
+
+const dayGap = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
+
 @Injectable()
 export class AchievementsService {
   constructor(
@@ -28,9 +43,37 @@ export class AchievementsService {
       q('SELECT COUNT(*) c FROM playlist WHERE userId=?'),
       q('SELECT COUNT(*) c FROM repost WHERE userId=?'),
     ]);
-    const userRows = await this.dataSource.query('SELECT plan, planExpires FROM user WHERE id=?', [userId]);
+    const userRows = await this.dataSource.query('SELECT plan, planExpires, streakCount FROM user WHERE id=?', [userId]);
     const subscriber = effectivePlan(userRows?.[0]) !== 'free' ? 1 : 0;
-    return { listened, likes, uploads, plays, albums, followers, comments, playlists, reposts, subscriber };
+    const streak = Number(userRows?.[0]?.streakCount || 0);
+    return { listened, likes, uploads, plays, albums, followers, comments, playlists, reposts, subscriber, streak };
+  }
+
+  private progressFrom(m: Record<string, number>, unlockedCount: number) {
+    const subscriber = m.subscriber === 1;
+    const xp = computeXp(m, unlockedCount, m.streak, subscriber);
+    return { xp, ...levelInfo(xp), streak: m.streak, subscriber };
+  }
+
+  async ping(userId: number) {
+    const rows = await this.dataSource.query('SELECT plan, planExpires, streakCount, lastActiveDate FROM user WHERE id=?', [userId]);
+    const row = rows?.[0];
+    if (!row) return { streak: 0 };
+    const sub = effectivePlan(row) !== 'free';
+    const today = new Date().toISOString().slice(0, 10);
+    let streak = Number(row.streakCount || 0);
+    const last: string | null = row.lastActiveDate;
+    if (!last) {
+      streak = 1;
+    } else {
+      const gap = dayGap(last, today);
+      if (gap <= 0) { /* уже сегодня */ }
+      else if (gap === 1) streak += 1;
+      else if (gap === 2 && sub) streak += 1; // заморозка стрика для Premium
+      else streak = 1;
+    }
+    await this.dataSource.query('UPDATE user SET streakCount=?, lastActiveDate=? WHERE id=?', [streak, today, userId]);
+    return { streak };
   }
 
   async getForUser(userId: number, sync = true) {
@@ -80,11 +123,13 @@ export class AchievementsService {
       unlockedNow: newlyUnlocked.includes(e.def.id),
     }));
 
+    const unlockedTotal = list.filter((a) => a.unlocked).length;
     return {
       achievements: list,
-      unlockedCount: list.filter((a) => a.unlocked).length,
+      unlockedCount: unlockedTotal,
       total: list.length,
       newly: list.filter((a) => a.unlockedNow),
+      progress: this.progressFrom(m, unlockedTotal),
     };
   }
 
@@ -96,6 +141,12 @@ export class AchievementsService {
       category: a.category, premium: !!a.premium, target: a.target,
       current: 0, unlocked: ownedSet.has(a.id), unlockedNow: false,
     }));
-    return { achievements: list, unlockedCount: ownedSet.size, total: list.length };
+    const m: Record<string, number> = await this.metrics(userId);
+    return {
+      achievements: list,
+      unlockedCount: ownedSet.size,
+      total: list.length,
+      progress: this.progressFrom(m, ownedSet.size),
+    };
   }
 }

@@ -58,6 +58,12 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   planExpires?: Date | null;
 
+  @Column({ default: 0 })
+  streakCount!: number;
+
+  @Column({ type: 'varchar', length: 10, nullable: true })
+  lastActiveDate?: string | null;
+
   @Column({ default: false })
   consentPrivacy!: boolean;
 
