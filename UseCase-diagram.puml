@@ -1,0 +1,56 @@
+@startuml NextSound_UseCase
+left to right direction
+skinparam shadowing false
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F4F6FF
+  BorderColor #5B7CFA
+  ArrowColor #6E6E8A
+}
+
+actor "Пользователь" as U
+actor "Слушатель" as L
+actor "Артист" as A
+actor "Администратор" as ADM
+
+L --|> U
+A --|> U
+
+rectangle "NextSound System" {
+  usecase "Поиск треков" as UC_search
+  usecase "Прослушивание трека" as UC_play
+  usecase "Управление плейлистом" as UC_plm
+  usecase "Создание плейлиста" as UC_plc
+  usecase "Загрузка трека" as UC_up
+  usecase "Удаление трека" as UC_del
+  usecase "Редактирование трека" as UC_edit
+  usecase "Регистрация" as UC_reg
+  usecase "Авторизация" as UC_auth
+  usecase "Просмотр статистики" as UC_stat
+  usecase "Удаление контента" as UC_delc
+  usecase "Модерация треков" as UC_mod
+  usecase "Управление пользователями" as UC_um
+  usecase "Просмотр пользователей" as UC_uv
+}
+
+U --> UC_reg
+U --> UC_auth
+
+L --> UC_search
+L --> UC_play
+L --> UC_plm
+L --> UC_plc
+
+A --> UC_up
+A --> UC_del
+A --> UC_edit
+
+ADM --> UC_stat
+ADM --> UC_delc
+ADM --> UC_mod
+ADM --> UC_um
+ADM --> UC_uv
+
+@enduml

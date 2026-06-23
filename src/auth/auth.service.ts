@@ -75,6 +75,16 @@ export class AuthService {
       consentIp: ip || null,
     })
 
+    const refId = Number(user.ref)
+    if (refId && refId !== newUser.id) {
+      const referrer = await this.usersService.findOneById(refId)
+      if (referrer) {
+        await this.usersService.setReferredBy(newUser.id, refId)
+        await this.usersService.grantBonusDays(newUser.id, 7)
+        await this.usersService.grantBonusDays(refId, 7)
+      }
+    }
+
     if (!this.mailEnabled()) {
       await this.usersService.markVerified(newUser.id)
       return { needVerification: false, email: newUser.email }

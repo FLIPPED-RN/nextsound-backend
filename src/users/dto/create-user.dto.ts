@@ -33,4 +33,7 @@ export class CreateUserDto {
     @IsOptional()
     @IsBoolean()
     consentMarketing?: boolean;
+
+    @IsOptional()
+    ref?: string | number;
 }

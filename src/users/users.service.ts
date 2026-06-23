@@ -68,6 +68,21 @@ export class UsersService {
     await this.usersRepository.update({ id }, { verifyCode: code, verifyExpires: expires });
   }
 
+  async grantBonusDays(userId: number, days: number, minPlan = 'plus') {
+    const u = await this.findOneById(userId);
+    if (!u) return;
+    const now = Date.now();
+    const curEnd = u.planExpires ? new Date(u.planExpires).getTime() : 0;
+    const base = curEnd > now ? curEnd : now;
+    const expires = new Date(base + days * 86400000);
+    const plan = u.plan && u.plan !== 'free' ? u.plan : minPlan;
+    await this.usersRepository.update({ id: userId }, { plan, planExpires: expires });
+  }
+
+  async setReferredBy(userId: number, refId: number) {
+    await this.usersRepository.update({ id: userId }, { referredBy: refId });
+  }
+
   async markVerified(id: number) {
     await this.usersRepository.update({ id }, { isVerified: true, verifyCode: null, verifyExpires: null });
   }

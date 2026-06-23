@@ -58,6 +58,9 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   planExpires?: Date | null;
 
+  @Column({ type: 'int', nullable: true })
+  referredBy?: number | null;
+
   @Column({ default: 0 })
   streakCount!: number;
 

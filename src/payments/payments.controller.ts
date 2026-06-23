@@ -12,6 +12,12 @@ export class PaymentsController {
     return this.paymentsService.createPayment(req.user.id, plan);
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('gift')
+  async gift(@Request() req, @Body('plan') plan: string, @Body('recipient') recipient: string) {
+    return this.paymentsService.createGift(req.user.id, plan, recipient);
+  }
+
   @HttpCode(200)
   @Post('webhook')
   async webhook(@Body() body: any) {
