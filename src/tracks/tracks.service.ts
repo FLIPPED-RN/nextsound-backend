@@ -162,6 +162,53 @@ export class TracksService {
     return result;
   }
 
+  async flow(userId?: number): Promise<Track[]> {
+    const want = 40;
+    const result: Track[] = [];
+    const seen = new Set<number>();
+    const push = (arr: Track[]) => {
+      for (const t of arr) { if (!seen.has(t.id)) { seen.add(t.id); result.push(t); } }
+    };
+
+    let genres: string[] = [];
+    let playedIds: number[] = [];
+    if (userId) {
+      const g = await this.tracksRepository.query(
+        "SELECT t.genre g FROM track t WHERE t.genre IS NOT NULL AND t.genre<>'' AND t.id IN (SELECT trackId FROM `like` WHERE userId=? UNION SELECT trackId FROM play WHERE userId=?) GROUP BY t.genre ORDER BY COUNT(*) DESC LIMIT 3",
+        [userId, userId],
+      );
+      genres = g.map((r: any) => r.g).filter(Boolean);
+      const pl = await this.playsRepository.find({ where: { userId } });
+      playedIds = pl.map((p) => p.trackId);
+    }
+
+    const base = () => this.tracksRepository.createQueryBuilder('t')
+      .leftJoinAndSelect('t.user', 'user')
+      .where('t.visibility = :v', { v: TrackVisibility.PUBLIC });
+
+    // 1) любимые жанры, ещё не слушал, в случайном порядке
+    if (genres.length) {
+      const qb = base().andWhere('t.genre IN (:...g)', { g: genres });
+      if (playedIds.length) qb.andWhere('t.id NOT IN (:...p)', { p: playedIds });
+      push(await qb.orderBy('RAND()').limit(25).getMany());
+    }
+    // 2) популярное, ещё не слушал
+    if (result.length < want) {
+      const qb = base();
+      if (playedIds.length) qb.andWhere('t.id NOT IN (:...p)', { p: playedIds });
+      if (seen.size) qb.andWhere('t.id NOT IN (:...s)', { s: [...seen] });
+      push(await qb.orderBy('t.plays_count', 'DESC').limit(20).getMany());
+    }
+    // 3) добор случайным
+    if (result.length < want) {
+      const qb = base();
+      if (seen.size) qb.andWhere('t.id NOT IN (:...s)', { s: [...seen] });
+      push(await qb.orderBy('RAND()').limit(20).getMany());
+    }
+
+    return result.slice(0, want);
+  }
+
   async history(userId: number): Promise<Track[]> {
     const plays = await this.playsRepository.find({
       where: { userId },

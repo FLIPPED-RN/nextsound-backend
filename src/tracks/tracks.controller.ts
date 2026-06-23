@@ -45,6 +45,12 @@ export class TracksController {
     return this.tracksService.trending();
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('flow')
+  async flow(@Request() req) {
+    return this.tracksService.flow(req.user?.id);
+  }
+
   @UseGuards(AuthGuard('jwt'))
   @Get('history')
   async history(@Request() req) {
