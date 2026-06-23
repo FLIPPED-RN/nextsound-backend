@@ -15,6 +15,7 @@ import { OgModule } from './og/og.module';
 import { AlbumsModule } from './albums/albums.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AchievementsModule } from './achievements/achievements.module';
+import { StatsModule } from './stats/stats.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AchievementsModule } from './achievements/achievements.module';
     AlbumsModule,
     PaymentsModule,
     AchievementsModule,
+    StatsModule,
   ],
 })
 export class AppModule {}
