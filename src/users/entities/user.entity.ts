@@ -61,6 +61,9 @@ export class User {
   @Column({ type: 'int', nullable: true })
   referredBy?: number | null;
 
+  @Column({ default: false })
+  referralRewarded!: boolean;
+
   @Column({ default: 0 })
   streakCount!: number;
 

@@ -49,6 +49,15 @@ export class AuthService {
     return process.env.MAIL_ENABLED === 'true';
   }
 
+  // Начисляет +7 дней Plus приглашённому и пригласившему — только один раз и только после верификации
+  private async rewardReferral(userId: number) {
+    const u = await this.usersService.findOneById(userId)
+    if (!u || !u.referredBy || u.referralRewarded) return
+    await this.usersService.markReferralRewarded(u.id)
+    await this.usersService.grantBonusDays(u.id, 7)
+    await this.usersService.grantBonusDays(u.referredBy, 7)
+  }
+
   async create(user, ip?: string | null) {
     if (!user.consentPrivacy || !user.consentTerms) {
       throw new BadRequestException('Необходимо принять Политику конфиденциальности и Пользовательское соглашение')
@@ -59,6 +68,14 @@ export class AuthService {
       throw new ConflictException('Пользователь с таким Email уже существует')
     }
 
+    // Запоминаем пригласившего, но бонус НЕ начисляем до подтверждения почты (анти-абуз)
+    let referredBy: number | null = null
+    const refId = Number(user.ref)
+    if (refId) {
+      const referrer = await this.usersService.findOneById(refId)
+      if (referrer) referredBy = refId
+    }
+
     const pass = await this.usersService.hashPassword(user.password)
     const newUser = await this.usersService.create({
       firstName: user.firstName,
@@ -67,6 +84,7 @@ export class AuthService {
       email: user.email,
       password: pass,
       role: Role.Listener,
+      referredBy,
       consentPrivacy: true,
       consentTerms: true,
       consentMarketing: !!user.consentMarketing,
@@ -75,18 +93,9 @@ export class AuthService {
       consentIp: ip || null,
     })
 
-    const refId = Number(user.ref)
-    if (refId && refId !== newUser.id) {
-      const referrer = await this.usersService.findOneById(refId)
-      if (referrer) {
-        await this.usersService.setReferredBy(newUser.id, refId)
-        await this.usersService.grantBonusDays(newUser.id, 7)
-        await this.usersService.grantBonusDays(refId, 7)
-      }
-    }
-
     if (!this.mailEnabled()) {
       await this.usersService.markVerified(newUser.id)
+      await this.rewardReferral(newUser.id)
       return { needVerification: false, email: newUser.email }
     }
 
@@ -114,6 +123,7 @@ export class AuthService {
     }
 
     await this.usersService.markVerified(user.id)
+    await this.rewardReferral(user.id)
     const { password, verifyCode, verifyExpires, ...clean } = user as any
     clean.isVerified = true
     return { user: clean, token: await this.generateToken(clean) }

@@ -83,6 +83,10 @@ export class UsersService {
     await this.usersRepository.update({ id: userId }, { referredBy: refId });
   }
 
+  async markReferralRewarded(userId: number) {
+    await this.usersRepository.update({ id: userId }, { referralRewarded: true });
+  }
+
   async markVerified(id: number) {
     await this.usersRepository.update({ id }, { isVerified: true, verifyCode: null, verifyExpires: null });
   }
