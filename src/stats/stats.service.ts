@@ -25,6 +25,41 @@ export class StatsService {
       this.count('SELECT COUNT(*) c FROM repost r JOIN track t ON r.trackId=t.id WHERE t.userId=?', [userId]),
     ]);
 
+    const playWin = (fromDays: number, toDays: number) =>
+      this.count(
+        'SELECT COUNT(*) c FROM play p JOIN track t ON p.trackId=t.id WHERE t.userId=? AND p.created_at >= ? AND p.created_at < ?',
+        [userId, new Date(Date.now() - fromDays * 86400000), new Date(Date.now() - toDays * 86400000)],
+      );
+
+    const [playsToday, plays7d, playsPrev7d, plays30d, listeners7d, followers7d, followersPrev7d] = await Promise.all([
+      playWin(1, 0),
+      playWin(7, 0),
+      playWin(14, 7),
+      playWin(30, 0),
+      this.count('SELECT COUNT(DISTINCT p.userId) c FROM play p JOIN track t ON p.trackId=t.id WHERE t.userId=? AND p.created_at >= ?', [userId, new Date(Date.now() - 7 * 86400000)]),
+      this.count('SELECT COUNT(*) c FROM follow WHERE followingId=? AND created_at >= ?', [userId, new Date(Date.now() - 7 * 86400000)]),
+      this.count('SELECT COUNT(*) c FROM follow WHERE followingId=? AND created_at >= ? AND created_at < ?', [userId, new Date(Date.now() - 14 * 86400000), new Date(Date.now() - 7 * 86400000)]),
+    ]);
+
+    const trendPct = (cur: number, prev: number) =>
+      prev > 0 ? Math.round(((cur - prev) / prev) * 100) : cur > 0 ? 100 : 0;
+
+    const engagementRate = totalPlays > 0
+      ? Math.round(((likes + comments + reposts) / totalPlays) * 1000) / 10
+      : 0;
+
+    const trends = {
+      playsToday,
+      plays7d,
+      plays30d,
+      playsTrend: trendPct(plays7d, playsPrev7d),
+      listeners7d,
+      followers7d,
+      followersTrend: trendPct(followers7d, followersPrev7d),
+      avgPerTrack: trackCount > 0 ? Math.round(totalPlays / trackCount) : 0,
+      engagementRate,
+    };
+
     const topTracks = await this.ds.query(
       'SELECT id, title, cover_path, plays_count FROM track WHERE userId=? ORDER BY plays_count DESC LIMIT 6',
       [userId],
@@ -56,6 +91,7 @@ export class StatsService {
     return {
       subscriber,
       summary: { totalPlays, trackCount, uniqueListeners, followers, likes, comments, reposts },
+      trends,
       topTracks,
       playsByDay,
       recentListeners,
