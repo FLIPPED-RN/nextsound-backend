@@ -4,6 +4,9 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { S3Service } from '../storage/s3.service';
+import { isSubscriber } from '../common/plans';
+
+const THEME_COLORS = ['#a855f7', '#6366f1', '#3b82f6', '#06b6d4', '#22c55e', '#eab308', '#f59e0b', '#ef4444', '#ec4899', '#14b8a6'];
 
 @Injectable()
 export class UsersService {
@@ -31,13 +34,21 @@ export class UsersService {
     return this.userResponse(user);
   }
 
-  async updateMe(id: number, data: Partial<Pick<User, 'firstName' | 'lastName' | 'nickname' | 'bio' | 'links'>>) {
+  async updateMe(id: number, data: Partial<Pick<User, 'firstName' | 'lastName' | 'nickname' | 'bio' | 'links' | 'themeColor'>>) {
     const clean: Partial<User> = {};
     if (data.firstName !== undefined) clean.firstName = data.firstName;
     if (data.lastName !== undefined) clean.lastName = data.lastName;
     if (data.nickname !== undefined) clean.nickname = data.nickname;
     if (data.bio !== undefined) clean.bio = data.bio;
     if (data.links !== undefined) clean.links = data.links;
+    if (data.themeColor !== undefined) {
+      // Кастомный цвет профиля — только для подписчиков
+      const current = await this.findOneById(id);
+      if (isSubscriber(current)) {
+        const c = data.themeColor;
+        clean.themeColor = c && THEME_COLORS.includes(c) ? c : null;
+      }
+    }
     await this.usersRepository.update({ id }, clean);
     return this.getPublicProfile(id);
   }

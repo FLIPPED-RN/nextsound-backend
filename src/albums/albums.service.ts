@@ -1,15 +1,23 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { Response } from 'express';
+import { extname } from 'path';
+import type { Archiver } from 'archiver';
+// Рантайм-экспорт archiver — фабричная функция; её типы (@types/archiver) не описывают вызов
+const createArchive: (format: string, options?: any) => Archiver = require('archiver');
 import { Album } from './entities/album.entity';
 import { Track, TrackVisibility } from '../tracks/entities/track.entity';
+import { User } from '../users/entities/user.entity';
 import { S3Service } from '../storage/s3.service';
+import { isSubscriber } from '../common/plans';
 
 @Injectable()
 export class AlbumsService {
   constructor(
     @InjectRepository(Album) private albums: Repository<Album>,
     @InjectRepository(Track) private tracks: Repository<Track>,
+    @InjectRepository(User) private users: Repository<User>,
     private s3: S3Service,
   ) { }
 
@@ -70,5 +78,39 @@ export class AlbumsService {
 
   async listForUpload(userId: number): Promise<Album[]> {
     return this.albums.find({ where: { userId }, order: { created_at: 'DESC' } });
+  }
+
+  // Скачивание всего альбома одним zip-архивом — только для подписчиков
+  async streamZip(id: number, requesterId: number, res: Response): Promise<void> {
+    const requester = await this.users.findOne({ where: { id: requesterId } });
+    if (!isSubscriber(requester)) {
+      throw new ForbiddenException('Скачивание альбома целиком доступно по подписке Plus');
+    }
+    const album = await this.albums.findOne({ where: { id } });
+    if (!album) throw new NotFoundException('Альбом не найден');
+    const tracks = await this.tracks.find({ where: { albumId: id }, order: { created_at: 'ASC' } });
+    if (!tracks.length) throw new NotFoundException('В альбоме нет треков');
+
+    const safe = (s: string) => (s || 'track').replace(/[\\/:*?"<>|]+/g, '_').trim().slice(0, 80);
+    const fileName = `${safe(album.title)}.zip`;
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+
+    const archive = createArchive('zip', { zlib: { level: 0 } });
+    archive.on('error', (e) => { res.destroy(e); });
+    archive.pipe(res);
+
+    let idx = 1;
+    for (const t of tracks) {
+      const stream = await this.s3.getStream(t.file_path);
+      if (!stream) continue;
+      let ext = '.mp3';
+      try { ext = extname(new URL(t.file_path).pathname) || '.mp3'; } catch { /* keep default */ }
+      const name = `${String(idx).padStart(2, '0')} - ${safe(t.title)}${ext}`;
+      archive.append(stream.body, { name });
+      idx++;
+    }
+    await archive.finalize();
   }
 }

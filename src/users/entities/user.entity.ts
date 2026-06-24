@@ -35,6 +35,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   bio?: string;
 
+  @Column({ type: 'varchar', length: 16, nullable: true })
+  themeColor?: string | null;
+
   @Column({ default: false })
   isVerified!: boolean;
 

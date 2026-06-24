@@ -1,6 +1,6 @@
 {
   "name": "nextsound-backend",
-  "version": "1.13.2",
+  "version": "1.15.0",
   "description": "",
   "author": "",
   "private": true,
@@ -30,6 +30,7 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.4.1",
     "@nestjs/typeorm": "^11.0.0",
+    "archiver": "^8.0.0",
     "argon2": "^0.44.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
@@ -49,6 +50,7 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.1.19",
+    "@types/archiver": "^8.0.0",
     "@types/argon2": "^0.14.1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",

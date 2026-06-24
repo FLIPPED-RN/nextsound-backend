@@ -244,11 +244,19 @@ export class TracksService {
   }
 
   async findAll(): Promise<Track[]> {
-    return this.tracksRepository.find({
-      where: { visibility: TrackVisibility.PUBLIC },
-      relations: ['user'],
-      order: { created_at: 'DESC' },
-    });
+    // Лёгкий буст релизов платных артистов: новизна — главный фактор (сортировка по дню),
+    // а внутри одного дня Pro выше Artist выше остальных. Свежие треки free всегда впереди старых.
+    return this.tracksRepository
+      .createQueryBuilder('t')
+      .leftJoinAndSelect('t.user', 'u')
+      .where('t.visibility = :v', { v: TrackVisibility.PUBLIC })
+      .orderBy('DATE(t.created_at)', 'DESC')
+      .addOrderBy(
+        "CASE WHEN (u.planExpires IS NULL OR u.planExpires > NOW()) THEN (CASE u.plan WHEN 'pro' THEN 2 WHEN 'artist' THEN 1 ELSE 0 END) ELSE 0 END",
+        'DESC',
+      )
+      .addOrderBy('t.created_at', 'DESC')
+      .getMany();
   }
 
   async findOne(id: number): Promise<Track> {

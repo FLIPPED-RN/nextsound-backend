@@ -1,6 +1,7 @@
 import {
-  Body, Controller, Delete, Get, Param, Post, Request, UseGuards, UseInterceptors, UploadedFile,
+  Body, Controller, Delete, Get, Param, Post, Request, Res, UseGuards, UseInterceptors, UploadedFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AlbumsService } from './albums.service';
@@ -30,6 +31,12 @@ export class AlbumsController {
   @Get('user/:userId')
   async byUser(@Param('userId') userId: number) {
     return this.albumsService.findByUser(userId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/download')
+  async download(@Param('id') id: number, @Request() req, @Res() res: Response) {
+    return this.albumsService.streamZip(id, req.user.id, res);
   }
 
   @Get(':id')
